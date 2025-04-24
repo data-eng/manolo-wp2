@@ -2,7 +2,7 @@
 name = "manolo"
 version = "0.1.0"
 description = "MANOLO EU Project - Trustworthy Efficient AI for Cloud-Edge Computing"
-authors = ["Hristo Stoev <hristo.stoev@ucd.ie>", "Cristian Bosch <cristian.boschserrano@ucd.ie>", "Eric Arazo <eric.arazo@ucd.ie>", "Andrés L. Suárez-Cetrulo <andres.suarez-cetrulo@ucd.ie>", "Ricardo Simón-Carbajo <ricardo.simoncarbajo@ucd.ie>"]
+authors = ["Hristo Stoev <hristo.stoev@ucd.ie>", "Hsin-Hung Chen <hsin-hung.chen@ucd.ie>", "Cristian Bosch <cristian.boschserrano@ucd.ie>", "Eric Arazo <eric.arazo@ucd.ie>", "Andrés L. Suárez-Cetrulo <andres.suarez-cetrulo@ucd.ie>", "Ricardo Simón-Carbajo <ricardo.simoncarbajo@ucd.ie>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
