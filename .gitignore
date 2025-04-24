@@ -24,3 +24,5 @@ venv.bak/
 *-py
 *tar*
 *.gz
+build/*
+*.egg-info
