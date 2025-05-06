@@ -14,7 +14,7 @@ version 0.0.0: Demo purpose.
 
 Please install the package with the command below.
 ```
-pip install -e $YOUR_PATH/UCD_FUN_HORIZON_MANOLO
+pip install -e $YOUR_PATH/MANOLO
 ```
 This should allow you to run the function without path referencing.
 
