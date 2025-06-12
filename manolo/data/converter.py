@@ -3,6 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 import logging
+import glob
+import mne
 
 def get_logger(level='DEBUG'):
     """
@@ -68,13 +70,50 @@ def convert_to_npy(df, path):
     np.save(path, df.values.astype(np.float32))
 
 def bitbrain(in_dir, out_dir):
-    path = get_path(in_dir, filename='test_unorm.csv')
-    df = pd.read_csv(path)
+    all_data = []
+
+    for subject_folder in glob.glob(os.path.join(in_dir, 'sub-*')):
+        subject_id = os.path.basename(subject_folder)
+        eeg_folder = os.path.join(subject_folder, 'eeg')
+
+        if not os.path.exists(eeg_folder):
+            continue
+
+        eeg_file_pattern = os.path.join(eeg_folder, f'{subject_id}_task-Sleep_acq-headband_eeg.edf')
+        events_file_pattern = os.path.join(eeg_folder, f'{subject_id}_task-Sleep_acq-psg_events.tsv')
+
+        try:
+            raw = mne.io.read_raw_edf(eeg_file_pattern, preload=True)
+            x_data = raw.to_data_frame()
+        except Exception as e:
+            continue
+
+        try:
+            y_data = pd.read_csv(events_file_pattern, delimiter='\t')
+        except Exception as e:
+            continue
+
+        y_expanded = pd.DataFrame(index=x_data.index, columns=y_data.columns)
+
+        for _, row in y_data.iterrows():
+            begsample = row['begsample'] - 1
+            endsample = row['endsample'] - 1
+
+            y_expanded.loc[begsample:endsample] = row.values
+
+        combined_data = pd.concat([x_data, y_expanded], axis=1)
+        combined_data['night'] = int(subject_id.replace('sub-', ''))
+
+        all_data.append(combined_data)
+        df = pd.concat(all_data, ignore_index=True)
+    
+    print("Preview of combined dataframe:")
+    print(df.head().to_string())
 
     time_cols = ['time']
     label_cols = ['majority']
     feature_cols = ['HB_1', 'HB_2']
-    other_cols = ['seq_id', 'night']
+    other_cols = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg']
 
     out_npy_path = get_path(out_dir, filename='bitbrain.npy')
     convert_to_npy(df, path=out_npy_path)
@@ -92,8 +131,8 @@ def bitbrain(in_dir, out_dir):
 def main():
     logger = get_logger(level='INFO')
 
-    in_dir = get_dir('..', '..', 'data', 'proc')
-    out_dir = get_dir('..', '..', 'data', 'bitbrain_conv')
+    in_dir = get_dir('..', '..', 'datasets', 'bitbrain_small')
+    out_dir = get_dir('..', '..', 'datasets', 'bitbrain_conv')
     
     logger.info("Converting dataset to npy and creating its metadata.")
     bitbrain(in_dir, out_dir)
