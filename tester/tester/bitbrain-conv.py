@@ -3,10 +3,9 @@ import pandas as pd
 import glob
 import mne
 
-from manolo.data import utils
-from manolo.data import converter
+import converter
 
-logger = utils.get_logger(level='INFO')
+logger = converter.get_logger(level='INFO')
 
 def bitbrain(dir):
     """
@@ -66,11 +65,11 @@ def main():
     """
     Main function to load the Bitbrain dataset, convert it to numpy format, and save metadata as JSON.
     """
-    in_dir = utils.get_dir('..', '..', 'datasets', 'bitbrain_small')
-    out_dir = utils.get_dir('..', '..', 'datasets', 'bitbrain_conv')
+    in_dir = converter.get_dir('..', '..', 'datasets', 'bitbrain_small')
+    out_dir = converter.get_dir('..', '..', 'datasets', 'bitbrain_conv')
 
-    out_npy_path = utils.get_path(out_dir, filename='bitbrain.npy')
-    out_json_path = utils.get_path(out_dir, filename='bitbrain.json')
+    out_npy_path = converter.get_path(out_dir, filename='bitbrain.npy')
+    out_json_path = converter.get_path(out_dir, filename='bitbrain.json')
     
     logger.info(f"Loading data from {in_dir} and returning it as a dataframe along with metadata.")
     df, features, time, labels, other = bitbrain(dir=in_dir)

@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "converter"
-version = "0.1"
-packages = [
-    { include = "converter" }
-]
+version = "0.2"
 description = "Dataset converter to MANOLO format: .npy for data, .json for metadata."
 authors = [ "Natalia Koliou <nataliakoliou@iit.demokritos.gr>",
 	        "Stasinos Konstantopoulos <konstant@iit.demokritos.gr>" ]
 readme = "README.md"
+packages = [
+    { include = "converter" }
+]
 
 [tool.poetry.dependencies]
 

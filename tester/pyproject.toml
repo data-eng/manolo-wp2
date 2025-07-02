@@ -17,7 +17,7 @@ pandas = "^2.1"
 numpy = "^1.26"
 mne = "^1.7"
 
-manolo = { path = "../manolo", develop = true }
+converter = { path = "../manolo/data/converter", develop = true }
 
 [build-system]
 requires = ["poetry-core"]
