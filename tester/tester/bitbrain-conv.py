@@ -54,7 +54,8 @@ def bitbrain(dir):
         combined_data['night'] = int(subject_id.replace('sub-', ''))
 
         all_data.append(combined_data)
-        df = pd.concat(all_data, ignore_index=True)
+
+    df = pd.concat(all_data, ignore_index=True)
     
     logger.info("Preview of combined dataframe:")
     logger.info(df.head().to_string())
@@ -65,19 +66,21 @@ def main():
     """
     Main function to load the Bitbrain dataset, convert it to numpy format, and save metadata as JSON.
     """
-    in_dir = converter.get_dir('..', '..', 'datasets', 'bitbrain_small')
-    out_dir = converter.get_dir('..', '..', 'datasets', 'bitbrain_conv')
+    root = os.path.abspath(os.path.join(os.getcwd(), '..'))
+
+    in_dir = converter.get_dir(root, 'datasets', 'bitbrain_small')
+    out_dir = converter.get_dir(root, 'datasets', 'bitbrain_conv')
 
     out_npy_path = converter.get_path(out_dir, filename='bitbrain.npy')
     out_json_path = converter.get_path(out_dir, filename='bitbrain.json')
     
-    logger.info(f"Loading data from {in_dir} and returning it as a dataframe along with metadata.")
+    logger.info(f"Loading data from bitbrain dataset and returning it as a dataframe along with metadata.")
     df, features, time, labels, other = bitbrain(dir=in_dir)
 
-    logger.info(f"Converting dataframe to numpy array and saving it as {out_npy_path}.")
+    logger.info(f"Converting dataframe to numpy array.")
     converter.create_npy(df, path=out_npy_path)
 
-    logger.info(f"Creating metadata JSON file at {out_json_path}.")
+    logger.info(f"Creating metadata JSON file.")
     converter.create_metadata(
         path=out_json_path,
         column_names=df.columns.tolist(),
@@ -87,7 +90,7 @@ def main():
         other=other
     )
 
-    logger.info(f"Conversion finished! Files (.npy and .json) saved at {out_dir}.")
+    logger.info(f"Conversion finished!")
 
 if __name__ == "__main__":
     main()
