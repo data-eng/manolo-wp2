@@ -19,6 +19,8 @@ def bitbrain(dir):
     features = ['HB_1', 'HB_2']
     time = ['time']
     labels = ['majority']
+    split = 'night'
+    weights = 'majority'
     other = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg']
 
     for subject_folder in glob.glob(os.path.join(dir, 'sub-*')):
@@ -56,11 +58,25 @@ def bitbrain(dir):
         all_data.append(combined_data)
 
     df = pd.concat(all_data, ignore_index=True)
+
+    before_nan_drop = len(df)
+    df = df.dropna(subset=features + time + labels)
+    dropped_na = before_nan_drop - len(df)
+
+    before_majority_drop = len(df)
+    df = df[df['majority'] != 8]
+    dropped_majority_8 = before_majority_drop - len(df)
+
+    logger.info(f"Dropped {dropped_na} rows containing NaN values.")
+    logger.info(f"Dropped {dropped_majority_8} rows where majority == 8.")
     
     logger.info("Preview of combined dataframe:")
     logger.info(df.head().to_string())
 
-    return df, features, time, labels, other
+    unique_nights = df['night'].unique()
+    logger.info(f"Unique nights in the combined dataframe: {sorted(unique_nights)}")
+
+    return df, features, time, labels, split, weights, other
 
 def main():
     """
@@ -75,7 +91,7 @@ def main():
     out_json_path = converter.get_path(out_dir, filename='bitbrain.json')
     
     logger.info(f"Loading data from bitbrain dataset and returning it as a dataframe along with metadata.")
-    df, features, time, labels, other = bitbrain(dir=in_dir)
+    df, features, time, labels, split, weights, other = bitbrain(dir=in_dir)
 
     logger.info(f"Converting dataframe to numpy array.")
     converter.create_npy(df, path=out_npy_path)
@@ -87,6 +103,8 @@ def main():
         features=features,
         time=time,
         labels=labels,
+        split=split,
+        weights=weights,
         other=other
     )
 

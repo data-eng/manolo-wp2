@@ -1,7 +1,7 @@
 import json
 import numpy as np
 
-def create_metadata(path, column_names, features, time, labels, other):
+def create_metadata(path, column_names, features, time, labels, split, weights, other):
     """
     Create a metadata JSON file with the specified information and save it to the given path.
 
@@ -10,6 +10,8 @@ def create_metadata(path, column_names, features, time, labels, other):
     :param features: List of feature names.
     :param time: List of time-related column names.
     :param labels: List of label names.
+    :param split: Single column whose values shouldn't be shared across different splits.
+    :param weights: Single Column used for calculating loss function weights.
     :param other: List of other relevant information.
     """
     metadata = {
@@ -17,6 +19,8 @@ def create_metadata(path, column_names, features, time, labels, other):
         "features": features,
         "time": time,
         "labels": labels,
+        "split": split,
+        "weights": weights,
         "other": other
     }
 

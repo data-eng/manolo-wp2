@@ -18,6 +18,7 @@ numpy = "^1.26"
 mne = "^1.7"
 
 converter = { path = "../manolo/data/converter", develop = true }
+torch_loader = { path = "../manolo/data/loaders/torch_loader", develop = true }
 
 [build-system]
 requires = ["poetry-core"]
@@ -25,3 +26,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 bitbrain-conv = "tester.bitbrain-conv:main"
+bitbrain-load = "tester.bitbrain-load:main"
