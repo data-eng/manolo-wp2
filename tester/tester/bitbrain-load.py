@@ -22,10 +22,18 @@ def main():
                                                     test_size=0.2,
                                                     exist=False)
     
-    logger.info("Extracting class weights from training set.")
     weights = tl.extract_weights(dir, name='bitbrain')
+    logger.info(f"Training data class weights:\n{weights}")
 
-    logger.info(f"Torch loaders created!")
+    stats = tl.get_stats(dir, name='bitbrain')
+    logger.info(f"Calculated statistics from training data.")
+
+    for data, process in zip([train_data, val_data, test_data], ['train', 'val', 'test']):
+        tl.standard_normalize(dir=dir, 
+                              name='bitbrain', 
+                              process=process,
+                              include=['HB_1', 'HB_2', 'time'], 
+                              stats=stats)
 
 if __name__ == "__main__":
     main()
