@@ -16,13 +16,13 @@ def bitbrain(dir):
     """
     all_data = []
 
+    columns = ['HB_1', 'HB_2', 'time', 'majority', 'night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg', 'HB_IMU_1', 'HB_IMU_2', 'HB_IMU_3', 'HB_IMU_4', 'HB_IMU_5', 'HB_IMU_6', 'HB_PULSE']
     features = ['HB_1', 'HB_2']
     time = ['time']
     labels = ['majority']
     split = 'night'
     weights = ['majority']
-    other = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg', 'HB_IMU_1', 
-             'HB_IMU_2', 'HB_IMU_3', 'HB_IMU_4', 'HB_IMU_5', 'HB_IMU_6', 'HB_PULSE']
+    other = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg', 'HB_IMU_1', 'HB_IMU_2', 'HB_IMU_3', 'HB_IMU_4', 'HB_IMU_5', 'HB_IMU_6', 'HB_PULSE']
 
     for subject_folder in glob.glob(os.path.join(dir, 'sub-*')):
         subject_id = os.path.basename(subject_folder)
@@ -77,6 +77,7 @@ def bitbrain(dir):
     unique_nights = df['night'].unique()
     logger.info(f"Unique nights in the combined dataframe: {sorted(unique_nights)}")
 
+    columns_npy = df[columns].values.astype('float32')
     features_npy = df[features].values.astype('float32')
     time_npy = df[time].values.astype('float32')
     labels_npy = df[labels].values.astype('int32')
@@ -84,7 +85,7 @@ def bitbrain(dir):
     weights_npy = df[weights].values.astype('float32')
     other_npy = df[other].values.astype('float32')
 
-    return (features_npy, time_npy, labels_npy, split_npy, weights_npy, other_npy), (features, time, labels, split, weights, other)
+    return (columns_npy, features_npy, time_npy, labels_npy, split_npy, weights_npy, other_npy), (columns, features, time, labels, split, weights, other)
 
 def main():
     """
@@ -99,15 +100,16 @@ def main():
     out_json_path = converter.get_path(out_dir, filename='bitbrain.json')
     
     logger.info(f"Loading data from bitbrain dataset and returning it as a dataframe along with metadata.")
-    data, columns = bitbrain(dir=in_dir)
+    data, keys = bitbrain(dir=in_dir)
 
     logger.info(f"Converting dataframe to numpy array.")
-    converter.create_npz(data=data, path=out_npz_path)
+    converter.create_npz(data=data, 
+                         path=out_npz_path)
 
     logger.info(f"Creating metadata JSON file.")
     converter.create_metadata(
         path=out_json_path,
-        columns=columns)
+        keys=keys)
 
     logger.info(f"Conversion finished!")
 

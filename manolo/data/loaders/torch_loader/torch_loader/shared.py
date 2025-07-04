@@ -9,6 +9,47 @@ from . import utils
 
 logger = utils.get_logger(level='DEBUG')
 
+def shift_labels(dir, name):
+    """
+    Load the structured .npz dataset and metadata, shift label values to start from 0,
+    and save the updated .npz back to the same path.
+
+    :param dir: Directory containing the dataset and metadata files.
+    :param name: Dataset name prefix (e.g., 'bitbrain').
+    """
+    data_path = utils.get_path(dir, filename=f"{name}.npz")
+    meta_path = utils.get_path(dir, filename=f"{name}.json")
+
+    data = utils.load_npz(data_path)
+    metadata = utils.load_json(meta_path)
+
+    label_cols = metadata["labels"]
+    weight_cols = metadata["weights"]
+    columns_cols = metadata["columns"]
+
+    labels_values = data["labels"]
+    columns_values = data["columns"]
+    weights_values = data["weights"]
+
+    for i, label in enumerate(label_cols):
+        label_col_values = labels_values[:, i]
+        unique_vals = np.unique(label_col_values)
+
+        mapping = {val: k for k, val in enumerate(sorted(unique_vals))}
+
+        mapping_func = np.vectorize(mapping.get)
+        labels_values[:, i] = mapping_func(label_col_values)
+
+        z = columns_cols.index(label)
+        columns_values[:, z] = mapping_func(label_col_values)
+
+        if label in weight_cols:
+            j = weight_cols.index(label)
+            weights_values[:, j] = mapping_func(label_col_values)
+
+    utils.save_npz(data=data, path=data_path)
+    logger.info(f"Shifted labels {label_cols} in {data_path} so values start at 0.")
+
 def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0):
     """
     Split structured .npz dataset into training, validation, and testing sets based on unique values in the split column.
@@ -154,41 +195,6 @@ def extract_weights(dir, name):
     logger.info(f"Saved class weights to {weights_path}: {weights}")
 
     return weights
-
-def shift_labels(dir, name):
-    """
-    Load the structured .npz dataset and metadata, shift label values to start from 0,
-    and save the updated .npz back to the same path.
-
-    :param dir: Directory containing the dataset and metadata files.
-    :param name: Dataset name prefix (e.g., 'bitbrain').
-    """
-    data_path = utils.get_path(dir, filename=f"{name}.npz")
-    meta_path = utils.get_path(dir, filename=f"{name}.json")
-
-    data = utils.load_npz(data_path)
-    metadata = utils.load_json(meta_path)
-
-    label_cols = metadata["labels"]
-    weight_cols = metadata["weights"]
-
-    for i, label in enumerate(label_cols):
-        label_col_values = data["labels"][:, i]
-        unique_vals = np.unique(label_col_values)
-
-        mapping = {val: k for k, val in enumerate(sorted(unique_vals))}
-
-        mapping_func = np.vectorize(mapping.get)
-        data["labels"][:, i] = mapping_func(label_col_values)
-
-        if label in weight_cols:
-            j = weight_cols.index(label)
-            weights_col_values = data["weights"][:, j]
-
-            data["weights"][:, j] = mapping_func(weights_col_values)
-
-    utils.save_npz(data=data, path=data_path)
-    logger.info(f"Shifted labels {label_cols} in {data_path} so values start at 0.")
 
 class TSDataset(Dataset):
     def __init__(self, dir, name, seq_len, full_epoch=7680, per_epoch=True):
