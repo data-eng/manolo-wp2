@@ -21,8 +21,7 @@ def main():
                   name=name, 
                   train_size=0.6, 
                   val_size=0.2, 
-                  test_size=0.2,
-                  exist=False)
+                  test_size=0.2)
     
     weights = tl.extract_weights(dir, name=name)
     logger.info(f"Training data class weights:\n{weights}")

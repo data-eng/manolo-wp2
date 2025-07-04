@@ -9,7 +9,7 @@ from . import utils
 
 logger = utils.get_logger(level='DEBUG')
 
-def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=False):
+def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0):
     """
     Split structured .npz dataset into training, validation, and testing sets based on unique values in the split column.
 
@@ -18,7 +18,6 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=Fal
     :param train_size: Proportion of nights to use for training.
     :param val_size: Proportion of nights to use for validation.
     :param test_size: Proportion of nights to use for testing.
-    :param exist: Boolean flag indicating if the training, validation, and testing dataframes already exist.
     :return: Tuple of DataFrames for training, validation, and testing.
     """
     data_path = utils.get_path(dir, filename=f'{name}.npz')
@@ -28,131 +27,127 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=Fal
     val_path = utils.get_path(dir, filename=f'{name}-val.npz')
     test_path = utils.get_path(dir, filename=f'{name}-test.npz')
 
-    if exist:
-        train_data = utils.load_npz(train_path)
-        val_data = utils.load_npz(val_path)
-        test_data = utils.load_npz(test_path)
+    data = utils.load_npz(data_path)
+    metadata = utils.load_json(meta_path)
 
-        logger.info(f"Loaded existing dataframes from {dir}.")
+    logger.info(f"Loaded data from {data_path} and metadata from {meta_path}.")
+
+    split_col = metadata["split"]
+
+    if split_col is None:
+        total = len(next(iter(data.values())))
+        indices = list(range(total))
+
+        random.seed(42)
+        random.shuffle(indices)
+
+        train_end = int(total * train_size)
+        val_end = train_end + int(total * val_size)
+
+        train_idx = indices[:train_end]
+        val_idx = indices[train_end:val_end]
+        test_idx = indices[val_end:]
+
+        def subset_data(idxs):
+            return {k: v[idxs] for k, v in data.items()}
+
+        train_data = subset_data(train_idx)
+        val_data = subset_data(val_idx)
+        test_data = subset_data(test_idx)
+    
     else:
-        data = utils.load_npz(data_path)
-        metadata = utils.load_json(meta_path)
+        split_values = data["split"] 
+        unique_values = list(np.unique(split_values))
 
-        logger.info(f"Loaded data from {data_path} and metadata from {meta_path}.")
+        logger.info(f"Unique values for split column '{split_col}': {unique_values}.")
 
-        split_col = metadata["split"]
+        random.seed(42)
+        random.shuffle(unique_values)
 
-        if split_col is None:
-            total = len(next(iter(data.values())))
-            indices = list(range(total))
+        n = len(unique_values)
 
-            random.seed(42)
-            random.shuffle(indices)
-
-            train_end = int(total * train_size)
-            val_end = train_end + int(total * val_size)
-
-            train_idx = indices[:train_end]
-            val_idx = indices[train_end:val_end]
-            test_idx = indices[val_end:]
-
-            def subset_data(idxs):
-                return {k: v[idxs] for k, v in data.items()}
-
-            train_data = subset_data(train_idx)
-            val_data = subset_data(val_idx)
-            test_data = subset_data(test_idx)
+        if train_size + val_size + test_size == 0:
+            raise ValueError("All sets have size 0, which is invalid.")
+        if train_size + val_size + test_size > 1:
+            raise ValueError("Sum of train, val, and test sizes must not exceed 1.")
         
-        else:
-            split_values = data["split"] 
-            unique_values = list(np.unique(split_values))
+        raw = {'train': round(n * train_size), 'val': round(n * val_size), 'test': round(n * test_size)}
+        total = sum(raw.values())
 
-            logger.info(f"Unique values for split column '{split_col}': {unique_values}.")
-
-            random.seed(42)
-            random.shuffle(unique_values)
-
-            n = len(unique_values)
-
-            if train_size + val_size + test_size == 0:
-                raise ValueError("All sets have size 0, which is invalid.")
-            if train_size + val_size + test_size > 1:
-                raise ValueError("Sum of train, val, and test sizes must not exceed 1.")
+        while total > n:
+            max_key = max(raw, key=raw.get)
+            raw[max_key] -= 1
+            total -= 1
             
-            raw = {'train': round(n * train_size), 'val': round(n * val_size), 'test': round(n * test_size)}
-            total = sum(raw.values())
+        while total < n:
+            min_key = min(raw, key=raw.get)
+            raw[min_key] += 1
+            total += 1
+        
+        train_end = raw['train']
+        val_end = train_end + raw['val']
 
-            while total > n:
-                max_key = max(raw, key=raw.get)
-                raw[max_key] -= 1
-                total -= 1
-                
-            while total < n:
-                min_key = min(raw, key=raw.get)
-                raw[min_key] += 1
-                total += 1
-           
-            train_end = raw['train']
-            val_end = train_end + raw['val']
+        train_vals = set(unique_values[:train_end])
+        val_vals = set(unique_values[train_end:val_end])
+        test_vals = set(unique_values[val_end:])
 
-            train_vals = set(unique_values[:train_end])
-            val_vals = set(unique_values[train_end:val_end])
-            test_vals = set(unique_values[val_end:])
+        def filter_data(values):
+            mask = np.isin(split_values, list(values))
+            return {k: v[mask] for k, v in data.items()}
 
-            def filter_data(values):
-                mask = np.isin(split_values, list(values))
-                return {k: v[mask] for k, v in data.items()}
+        train_data = filter_data(train_vals)
+        val_data = filter_data(val_vals)
+        test_data = filter_data(test_vals)
 
-            train_data = filter_data(train_vals)
-            val_data = filter_data(val_vals)
-            test_data = filter_data(test_vals)
+        logger.info(f"Train values: {sorted(train_vals)}")
+        logger.info(f"Validation values: {sorted(val_vals)}")
+        logger.info(f"Test values: {sorted(test_vals)}")
 
-            logger.info(f"Train values: {sorted(train_vals)}")
-            logger.info(f"Validation values: {sorted(val_vals)}")
-            logger.info(f"Test values: {sorted(test_vals)}")
+        assert train_vals.isdisjoint(val_vals), "Overlap in train and val nights!"
+        assert train_vals.isdisjoint(test_vals), "Overlap in train and test nights!"
+        assert val_vals.isdisjoint(test_vals), "Overlap in val and test nights!"   
 
-            assert train_vals.isdisjoint(val_vals), "Overlap in train and val nights!"
-            assert train_vals.isdisjoint(test_vals), "Overlap in train and test nights!"
-            assert val_vals.isdisjoint(test_vals), "Overlap in val and test nights!"   
+    utils.save_npz(train_data, train_path)
+    utils.save_npz(val_data, val_path)
+    utils.save_npz(test_data, test_path)
 
-        utils.save_npz(train_data, train_path)
-        utils.save_npz(val_data, val_path)
-        utils.save_npz(test_data, test_path)
-
-        logger.info(f"Data split into train ({len(next(iter(train_data.values())))} samples), "
-            f"val ({len(next(iter(val_data.values())))} samples), "
-            f"test ({len(next(iter(test_data.values())))} samples).")
+    logger.info(f"Data split into train ({len(next(iter(train_data.values())))} samples), "
+        f"val ({len(next(iter(val_data.values())))} samples), "
+        f"test ({len(next(iter(test_data.values())))} samples).")
 
 def extract_weights(dir, name):
     """
-    Calculate class weights from the training NumPy array to handle class imbalance, and save them to a file.
+    Calculate class weights from the training structured .npz dataset to handle class imbalance, and save them to a JSON file. Supports multiple weight columns.
 
     :param dir: Directory to save the weights file.
     :param name: Name of the dataset (e.g., 'bitbrain').
     :return: Dictionary of class weights.
     """
-    data_path = utils.get_path(dir, filename=f'{name}-train.npy')
+    data_path = utils.get_path(dir, filename=f'{name}-train.npz')
     meta_path = utils.get_path(dir, filename=f'{name}.json')
 
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Training data file not found: {data_path}. Cannot extract weights.")
 
-    data = utils.load_npy(data_path)
+    data = utils.load_npz(data_path)
     metadata = utils.load_json(meta_path)
 
-    column_names = metadata["columns"]
-    weights_col = metadata["weights"]
+    weights_values = data["weights"]
+    weights_cols = metadata["weights"]
 
-    col_idx = column_names.index(weights_col)
-    labels = data[:, col_idx]
-    unique_labels, counts = np.unique(labels, return_counts=True)
+    weights = {}
 
-    occs = dict(zip(unique_labels, counts))
-    inverse_occs = {key: 1 / (value + 1e-10) for key, value in occs.items()}
+    for idx, col in enumerate(weights_cols):
+        col_values = weights_values[:, idx]
 
-    total = sum(inverse_occs.values())
-    weights = {int(key): val / total for key, val in inverse_occs.items()}
-    weights = dict(sorted(weights.items()))
+        unique_labels, counts = np.unique(col_values, return_counts=True)
+        occs = dict(zip(unique_labels, counts))
+
+        inverse_occs = {int(k): 1 / (v + 1e-10) for k, v in occs.items()}
+        total = sum(inverse_occs.values())
+
+        col_weights = {int(k): v / total for k, v in inverse_occs.items()}
+        weights[col] = dict(sorted(col_weights.items()))
 
     weights_path = utils.get_path(dir, filename=f'{name}-weights.json')
     utils.save_json(data=weights, path=weights_path)
