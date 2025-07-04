@@ -70,6 +70,24 @@ def save_npy(data, path):
     """
     np.save(path, data)
 
+def load_npz(path):
+    """
+    Load a structured .npz file from the given path.
+
+    :param path: Full path to the .npz file.
+    :return: Loaded numpy structured array.
+    """
+    return dict(np.load(path))
+
+def save_npz(data, path):
+    """
+    Save a structured numpy array to a .npz file at the specified path.
+
+    :param data: Structured numpy array to save.
+    :param path: Full path to the .npz file.
+    """
+    np.savez(path, **data)
+
 def load_json(path):
     """
     Load a JSON file from the given path.

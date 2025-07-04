@@ -2,7 +2,8 @@ import random
 import multiprocessing
 import numpy as np
 import os
-from torch.utils.data import DataLoader
+import torch
+from torch.utils.data import Dataset, DataLoader
 
 from . import utils
 
@@ -10,9 +11,9 @@ logger = utils.get_logger(level='DEBUG')
 
 def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=False):
     """
-    Split the data into training, validation, and testing sets based on unique night_id values.
+    Split structured .npz dataset into training, validation, and testing sets based on unique values in the split column.
 
-    :param dir: Directory containing the numpy array.
+    :param dir: Directory containing the dataset.
     :param name: Name of the dataset (e.g., 'bitbrain').
     :param train_size: Proportion of nights to use for training.
     :param val_size: Proportion of nights to use for validation.
@@ -20,32 +21,29 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=Fal
     :param exist: Boolean flag indicating if the training, validation, and testing dataframes already exist.
     :return: Tuple of DataFrames for training, validation, and testing.
     """
-    data_path = utils.get_path(dir, filename=f'{name}.npy')
+    data_path = utils.get_path(dir, filename=f'{name}.npz')
     meta_path = utils.get_path(dir, filename=f'{name}.json')
 
-    train_path = utils.get_path(dir, filename=f'{name}-train.npy')
-    val_path = utils.get_path(dir, filename=f'{name}-val.npy')
-    test_path = utils.get_path(dir, filename=f'{name}-test.npy')
+    train_path = utils.get_path(dir, filename=f'{name}-train.npz')
+    val_path = utils.get_path(dir, filename=f'{name}-val.npz')
+    test_path = utils.get_path(dir, filename=f'{name}-test.npz')
 
     if exist:
-        train_data = utils.load_npy(train_path)
-        val_data = utils.load_npy(val_path)
-        test_data = utils.load_npy(test_path)
+        train_data = utils.load_npz(train_path)
+        val_data = utils.load_npz(val_path)
+        test_data = utils.load_npz(test_path)
 
         logger.info(f"Loaded existing dataframes from {dir}.")
-
-        return train_data, val_data, test_data
     else:
-        data = utils.load_npy(data_path)
+        data = utils.load_npz(data_path)
         metadata = utils.load_json(meta_path)
 
         logger.info(f"Loaded data from {data_path} and metadata from {meta_path}.")
 
-        column_names = metadata["columns"]
         split_col = metadata["split"]
 
         if split_col is None:
-            total = len(data)
+            total = len(next(iter(data.values())))
             indices = list(range(total))
 
             random.seed(42)
@@ -58,13 +56,16 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=Fal
             val_idx = indices[train_end:val_end]
             test_idx = indices[val_end:]
 
-            train_data = data[train_idx]
-            val_data = data[val_idx]
-            test_data = data[test_idx]
+            def subset_data(idxs):
+                return {k: v[idxs] for k, v in data.items()}
+
+            train_data = subset_data(train_idx)
+            val_data = subset_data(val_idx)
+            test_data = subset_data(test_idx)
         
         else:
-            split_col_idx = column_names.index(split_col)
-            unique_values = list(np.unique(data[:, split_col_idx]))
+            split_values = data["split"] 
+            unique_values = list(np.unique(split_values))
 
             logger.info(f"Unique values for split column '{split_col}': {unique_values}.")
 
@@ -98,13 +99,13 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=Fal
             val_vals = set(unique_values[train_end:val_end])
             test_vals = set(unique_values[val_end:])
 
-            def filter(values):
-                values = np.array(list(values)).astype(data[:, split_col_idx].dtype)
-                return data[np.isin(data[:, split_col_idx], values)].copy()
-            
-            train_data = filter(train_vals)
-            val_data = filter(val_vals)
-            test_data = filter(test_vals)
+            def filter_data(values):
+                mask = np.isin(split_values, list(values))
+                return {k: v[mask] for k, v in data.items()}
+
+            train_data = filter_data(train_vals)
+            val_data = filter_data(val_vals)
+            test_data = filter_data(test_vals)
 
             logger.info(f"Train values: {sorted(train_vals)}")
             logger.info(f"Validation values: {sorted(val_vals)}")
@@ -114,13 +115,13 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0, exist=Fal
             assert train_vals.isdisjoint(test_vals), "Overlap in train and test nights!"
             assert val_vals.isdisjoint(test_vals), "Overlap in val and test nights!"   
 
-        utils.save_npy(data=train_data, path=train_path)
-        utils.save_npy(data=val_data, path=val_path)
-        utils.save_npy(data=test_data, path=test_path)
+        utils.save_npz(train_data, train_path)
+        utils.save_npz(val_data, val_path)
+        utils.save_npz(test_data, test_path)
 
-        logger.info(f"Data split into train ({len(train_data)} samples), val ({len(val_data)} samples), test ({len(test_data)} samples).")
-
-        return train_data, val_data, test_data
+        logger.info(f"Data split into train ({len(next(iter(train_data.values())))} samples), "
+            f"val ({len(next(iter(val_data.values())))} samples), "
+            f"test ({len(next(iter(test_data.values())))} samples).")
 
 def extract_weights(dir, name):
     """
@@ -161,35 +162,160 @@ def extract_weights(dir, name):
 
 def shift_labels(dir, name):
     """
-    Load the dataset and metadata, shift label columns' values to start from 0,
-    and save the updated numpy data back to the same path.
+    Load the structured .npz dataset and metadata, shift label values to start from 0,
+    and save the updated .npz back to the same path.
 
     :param dir: Directory containing the dataset and metadata files.
     :param name: Dataset name prefix (e.g., 'bitbrain').
     """
-    data_path = utils.get_path(dir, filename=f"{name}.npy")
+    data_path = utils.get_path(dir, filename=f"{name}.npz")
     meta_path = utils.get_path(dir, filename=f"{name}.json")
 
-    data = utils.load_npy(data_path)
+    data = utils.load_npz(data_path)
     metadata = utils.load_json(meta_path)
 
-    column_names = metadata["columns"]
     label_cols = metadata["labels"]
+    weight_cols = metadata["weights"]
 
-    for col in label_cols:
-        col_idx = column_names.index(col)
-        col_values = data[:, col_idx]
+    for i, label in enumerate(label_cols):
+        label_col_values = data["labels"][:, i]
+        unique_vals = np.unique(label_col_values)
 
-        unique_vals = np.unique(col_values)
-        mapping = {val: i for i, val in enumerate(sorted(unique_vals))}
+        mapping = {val: k for k, val in enumerate(sorted(unique_vals))}
 
-        mapping_function = np.vectorize(mapping.get)
-        remapped_values = mapping_function(col_values)
+        mapping_func = np.vectorize(mapping.get)
+        data["labels"][:, i] = mapping_func(label_col_values)
 
-        data[:, col_idx] = remapped_values
+        if label in weight_cols:
+            j = weight_cols.index(label)
+            weights_col_values = data["weights"][:, j]
 
-    utils.save_npy(data=data, path=data_path)
+            data["weights"][:, j] = mapping_func(weights_col_values)
+
+    utils.save_npz(data=data, path=data_path)
     logger.info(f"Shifted labels {label_cols} in {data_path} so values start at 0.")
+
+class TSDataset(Dataset):
+    def __init__(self, dir, name, seq_len, full_epoch=7680, per_epoch=True):
+        """
+        Initializes a time series dataset. It creates sequences from the input data by 
+        concatenating features and time columns. The target variable is stored separately.
+
+        :param dir: Directory containing the NumPy array dataset.
+        :param name: Name of the dataset (e.g. bitbrain-train-std-norm.npy).
+        :param seq_len: Length of the input sequence (number of time steps).
+        :param full_epoch: Length of a full epoch in samples (default is 7680).
+        :param per_epoch: Whether to create sequences in non-overlapping (True) or overlapping (False) epochs.
+        """
+        self.seq_len = seq_len
+        self.per_epoch = per_epoch
+
+        self.ds_name = name.split('-')[0]
+        self.data_path = utils.get_path(dir, filename=f"{name}.npy")
+        self.meta_path = utils.get_path(dir, filename=f"{self.ds_name}.json")
+
+        self.data = utils.load_npy(self.data_path)
+        self.metadata = utils.load_json(self.meta_path)
+
+        self.columns = self.metadata["columns"]
+        self.X = self.metadata["features"] + self.metadata["time"]
+        self.y = self.metadata["labels"]
+
+        self.X_ids = [self.columns.index(c) for c in self.X]
+        self.y_ids = [self.columns.index(c) for c in self.y]
+
+        logger.debug(f'Initializing dataset with: samples={self.num_samples}, samples/seq={seq_len}, seqs={self.num_seqs}, epochs={self.num_epochs} ')
+
+    def __len__(self):
+        """
+        Returns the number of sequences in the dataset.
+
+        :return: Length of the dataset.
+        """
+        return self.num_seqs
+
+    def __getitem__(self, idx):
+        """
+        Retrieves a sample from the dataset at the specified index.
+
+        :param idx: Index of the sample.
+        :return: Tuple of features and target tensors.
+        """
+        if self.per_epoch:
+            start_idx = idx * self.seq_len
+        else:
+            start_idx = idx
+
+        end_idx = start_idx + self.seq_len
+
+        seq_data = self.data[start_idx:end_idx]
+
+        X = seq_data[:, self.X_ids]
+        y = seq_data[:, self.y_ids]
+
+        X, y = torch.FloatTensor(X), torch.LongTensor(y)
+
+        return X, y
+    
+    @property
+    def num_samples(self):
+        """
+        Returns the total number of samples in the dataset.
+        
+        :return: Total number of samples.
+        """
+        return self.data.shape[0]
+    
+    @property
+    def num_epochs(self):
+        """
+        Returns the number of full epochs available based on the dataset size.
+
+        :return: Number of epochs.
+        """
+        return self.num_samples // self.full_epoch
+
+    @property
+    def max_seq_id(self):
+        """
+        Returns the maximum index for a sequence.
+
+        :return: Maximum index for a sequence.
+        """
+        return self.num_samples - self.seq_len
+    
+    @property
+    def num_seqs(self):
+        """
+        Returns the number of sequences that can be created from the dataset.
+
+        :return: Number of sequences.
+        """
+        if self.per_epoch:
+            return self.num_samples // self.seq_len
+        else:
+            return self.max_seq_id + 1
+        
+def create_dataset(dir, name, seq_len, full_epoch, per_epoch):
+    """
+    Create a TSDataset instance from a directory containing preprocessed data.
+
+    :param dir: Directory containing the NumPy array dataset.
+    :param name: Name of the dataset (e.g. bitbrain-train-std-norm.npy).
+    :param seq_len: Length of the input sequence (number of time steps).
+    :param full_epoch: Length of a full epoch in samples (default is 7680).
+    :param per_epoch: Whether to create sequences in non-overlapping (True) or overlapping (False) epochs.
+    :return: TSDataset instance.
+    """
+    dataset = TSDataset(dir=dir, 
+                        name=name, 
+                        seq_len=seq_len, 
+                        ull_epoch=full_epoch, 
+                        per_epoch=per_epoch)
+
+    logger.debug(f'Dataset created successfully!')
+
+    return dataset
 
 def create_dataloader(ds, batch_size, shuffle=[True, False, False], num_workers=None, drop_last=False):
     """

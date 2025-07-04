@@ -12,7 +12,7 @@ def bitbrain(dir):
     Load the Bitbrain dataset from the specified directory, process it and return a dataframe along with metadata.
 
     :param dir: Directory containing the Bitbrain dataset.
-    :return: A tuple containing the processed dataframe, features, time, labels, and other.
+    :return: A tuple containing the processed data as numpy arrays and a list of metadata features.
     """
     all_data = []
 
@@ -20,8 +20,9 @@ def bitbrain(dir):
     time = ['time']
     labels = ['majority']
     split = 'night'
-    weights = 'majority'
-    other = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg']
+    weights = ['majority']
+    other = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg', 'HB_IMU_1', 
+             'HB_IMU_2', 'HB_IMU_3', 'HB_IMU_4', 'HB_IMU_5', 'HB_IMU_6', 'HB_PULSE']
 
     for subject_folder in glob.glob(os.path.join(dir, 'sub-*')):
         subject_id = os.path.basename(subject_folder)
@@ -76,7 +77,14 @@ def bitbrain(dir):
     unique_nights = df['night'].unique()
     logger.info(f"Unique nights in the combined dataframe: {sorted(unique_nights)}")
 
-    return df, features, time, labels, split, weights, other
+    features_npy = df[features].values.astype('float32')
+    time_npy = df[time].values.astype('float32')
+    labels_npy = df[labels].values.astype('int32')
+    split_npy = df[split].values.astype('int32')
+    weights_npy = df[weights].values.astype('float32')
+    other_npy = df[other].values.astype('float32')
+
+    return (features_npy, time_npy, labels_npy, split_npy, weights_npy, other_npy), (features, time, labels, split, weights, other)
 
 def main():
     """
@@ -87,26 +95,19 @@ def main():
     in_dir = converter.get_dir(root, 'datasets', 'bitbrain_small')
     out_dir = converter.get_dir(root, 'datasets', 'bitbrain_conv')
 
-    out_npy_path = converter.get_path(out_dir, filename='bitbrain.npy')
+    out_npz_path = converter.get_path(out_dir, filename='bitbrain.npz')
     out_json_path = converter.get_path(out_dir, filename='bitbrain.json')
     
     logger.info(f"Loading data from bitbrain dataset and returning it as a dataframe along with metadata.")
-    df, features, time, labels, split, weights, other = bitbrain(dir=in_dir)
+    data, columns = bitbrain(dir=in_dir)
 
     logger.info(f"Converting dataframe to numpy array.")
-    converter.create_npy(df, path=out_npy_path)
+    converter.create_npz(data=data, path=out_npz_path)
 
     logger.info(f"Creating metadata JSON file.")
     converter.create_metadata(
         path=out_json_path,
-        column_names=df.columns.tolist(),
-        features=features,
-        time=time,
-        labels=labels,
-        split=split,
-        weights=weights,
-        other=other
-    )
+        columns=columns)
 
     logger.info(f"Conversion finished!")
 

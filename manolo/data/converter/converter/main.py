@@ -1,21 +1,17 @@
 import json
 import numpy as np
 
-def create_metadata(path, column_names, features, time, labels, split, weights, other):
+def create_metadata(path, columns):
     """
-    Create a metadata JSON file with the specified information and save it to the given path.
+    Save metadata for structured numpy arrays into a JSON file.
 
-    :param path: Path where the metadata JSON file will be saved.
-    :param column_names: List of column names in the DataFrame.
-    :param features: List of feature names.
-    :param time: List of time-related column names.
-    :param labels: List of label names.
-    :param split: Single column whose values shouldn't be shared across different splits.
-    :param weights: Single Column used for calculating loss function weights.
-    :param other: List of other relevant information.
+    :param path: Path to save the metadata JSON.
+    :param columns: Tuple containing (features, time, labels, split, weights, other).
     """
+    features, time, labels, split, weights, other = columns
+
     metadata = {
-        "columns": column_names,
+        "columns": features + time + labels + other,
         "features": features,
         "time": time,
         "labels": labels,
@@ -27,11 +23,14 @@ def create_metadata(path, column_names, features, time, labels, split, weights, 
     with open(path, 'w') as f:
         json.dump(metadata, f, indent=4)
 
-def create_npy(df, path):
+def create_npz(data, path):
     """
-    Convert a pandas DataFrame to a numpy array and save it to the specified path.
+    Save multiple structured numpy arrays into a single .npz file.
 
-    :param df: DataFrame to convert.
-    :param path: Path where the numpy array will be saved.
+    :param data: Tuple of arrays (features, time, labels, split, weights, other).
+    :param path: Path where the .npz archive will be saved.
     """
-    np.save(path, df.values.astype(np.float32))
+    keys = ['features', 'time', 'labels', 'split', 'weights', 'other']
+    array_dict = {k: v for k, v in zip(keys, data)}
+
+    np.savez(path, **array_dict)
