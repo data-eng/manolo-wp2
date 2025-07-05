@@ -30,7 +30,7 @@ def create_npz(data, path):
     :param data: Tuple of arrays (features, time, labels, split, weights, other).
     :param path: Path where the .npz archive will be saved.
     """
-    keys = ['columns', 'features', 'time', 'labels', 'split', 'weights', 'other']
+    keys = ['features', 'time', 'labels', 'split', 'weights', 'other']
     array_dict = {k: v for k, v in zip(keys, data)}
 
     np.savez(path, **array_dict)

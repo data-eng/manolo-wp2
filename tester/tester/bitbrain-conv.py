@@ -20,7 +20,7 @@ def bitbrain(dir):
     features = ['HB_1', 'HB_2']
     time = ['time']
     labels = ['majority']
-    split = 'night'
+    split = ['night']
     weights = ['majority']
     other = ['night', 'onset', 'duration', 'begsample', 'endsample', 'offset', 'ai_psg', 'HB_IMU_1', 'HB_IMU_2', 'HB_IMU_3', 'HB_IMU_4', 'HB_IMU_5', 'HB_IMU_6', 'HB_PULSE']
 
@@ -77,7 +77,6 @@ def bitbrain(dir):
     unique_nights = df['night'].unique()
     logger.info(f"Unique nights in the combined dataframe: {sorted(unique_nights)}")
 
-    columns_npy = df[columns].values.astype('float32')
     features_npy = df[features].values.astype('float32')
     time_npy = df[time].values.astype('float32')
     labels_npy = df[labels].values.astype('int32')
@@ -85,7 +84,7 @@ def bitbrain(dir):
     weights_npy = df[weights].values.astype('float32')
     other_npy = df[other].values.astype('float32')
 
-    return (columns_npy, features_npy, time_npy, labels_npy, split_npy, weights_npy, other_npy), (columns, features, time, labels, split, weights, other)
+    return (features_npy, time_npy, labels_npy, split_npy, weights_npy, other_npy), (columns, features, time, labels, split, weights, other)
 
 def main():
     """

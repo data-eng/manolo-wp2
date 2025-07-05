@@ -25,10 +25,8 @@ def shift_labels(dir, name):
 
     label_cols = metadata["labels"]
     weight_cols = metadata["weights"]
-    columns_cols = metadata["columns"]
 
     labels_values = data["labels"]
-    columns_values = data["columns"]
     weights_values = data["weights"]
 
     for i, label in enumerate(label_cols):
@@ -39,9 +37,6 @@ def shift_labels(dir, name):
 
         mapping_func = np.vectorize(mapping.get)
         labels_values[:, i] = mapping_func(label_col_values)
-
-        z = columns_cols.index(label)
-        columns_values[:, z] = mapping_func(label_col_values)
 
         if label in weight_cols:
             j = weight_cols.index(label)
@@ -73,7 +68,7 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0):
 
     logger.info(f"Loaded data from {data_path} and metadata from {meta_path}.")
 
-    split_col = metadata["split"]
+    split_col = metadata["split"][0]
 
     if split_col is None:
         total = len(next(iter(data.values())))

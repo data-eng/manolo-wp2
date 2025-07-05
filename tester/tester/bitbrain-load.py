@@ -29,12 +29,18 @@ def main():
     stats = tl.get_stats(dir, name=name)
     logger.info(f"Calculated statistics from training data.")
 
-    # for process in ['train', 'val', 'test']:
-    #     tl.standard_normalize(dir=dir,
-    #                           name=name,
-    #                           process=process,
-    #                           include=['HB_1', 'HB_2', 'time'],
-    #                           stats=stats)
+    for process in ['train', 'val', 'test']:
+        tl.standard_normalize(dir=dir,
+                              name=name,
+                              process=process,
+                              include=['HB_1', 'HB_2', 'time'],
+                              stats=stats)
+        
+        tl.robust_normalize(dir=dir,
+                            name=name,
+                            process=process,
+                            include=['HB_1', 'HB_2', 'time'],
+                            stats=stats)
         
     #     ds = tl.create_dataset(dir=dir, 
     #                            name=f'bitbrain-{process}-std-norm',
