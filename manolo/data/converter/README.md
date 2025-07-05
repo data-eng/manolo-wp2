@@ -10,10 +10,11 @@ This dataset format defines a structured way to organize multi-modal time series
 
 | Key        | Type     | Description                                                                 |
 |------------|----------|-----------------------------------------------------------------------------|
-| `features` | `List[str]` | Names of input feature columns (e.g. EEG, sensor values).                    |
+| `columns`  | `List[str]` | All distinct columns in the dataset (union of all below). |
+| `features` | `List[str]` | Names of input feature columns.                   |
 | `time`     | `List[str]` | Names of time-related columns.                                |
 | `labels`   | `List[str]` | Names of target columns used for supervised learning.                        |
-| `split`    | `str`       | Single column name used to group data for splitting.        |
+| `split`    | `List[str]` | Exactly one column used to group data for splitting.        |
 | `weights`  | `List[str]` | Subset (or all) of `labels` used for computing class weights during training. |
 | `other`    | `List[str]` | All other auxiliary columns not listed in `features`, `time`, or `labels`.   |
 | `columns`  | `List[str]` | Concatenation of all above, preserving the full original column order.       |
@@ -26,7 +27,7 @@ Each key corresponds to a NumPy array shaped as follows:
 - `features`: (T, Fs) or higher (e.g. (T, C, H, W) for image-like inputs)
 - `time`: (T, Ts)
 - `labels`: (T, Ls)
-- `split`: (T,)
+- `split`: (T, 1)
 - `weights`: (T, Ws)
 - `other`: (T, Os)
 
@@ -35,7 +36,7 @@ Here, T = number of total samples.
 
 ## Rules & Assumptions
 
-- `split` must be a **single string** (column name).
+- `split` must be a **list containing exactly one column name** (e.g., `["night"]`).
 - `weights` must be a **list of label names** (subset or full).
 - `other` must **not** contain any name from `features`, `time`, or `labels`.
 - All arrays must share the **same first dimension** `T` (time).
@@ -48,8 +49,8 @@ Here, T = number of total samples.
   "features": ["HB_1", "HB_2"],
   "time": ["time"],
   "labels": ["majority"],
-  "split": "night",
+  "split": ["night"],
   "weights": ["majority"],
-  "other": ["night", "onset", "duration", "begsample", "endsample", "offset", "ai_psg"],
-  "columns": ["time", "HB_1", "HB_2", "majority", "night", "onset", "duration", "begsample", "endsample", "offset", "ai_psg"]
+  "other": ["night", "onset", "duration", "begsample", "endsample", "offset", "ai_psg", "HB_IMU_1", "HB_IMU_2", "HB_IMU_3", "HB_IMU_4", "HB_IMU_5", "HB_IMU_6", "HB_PULSE"],
+  "columns": ["HB_1", "HB_2", "time", "majority", "night", "onset", "duration", "begsample", "endsample", "offset", "ai_psg", "HB_IMU_1", "HB_IMU_2", "HB_IMU_3", "HB_IMU_4", "HB_IMU_5", "HB_IMU_6", "HB_PULSE"]
 }
