@@ -92,7 +92,7 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0):
         test_data = subset_data(test_idx)
     
     else:
-        split_values = data["split"] 
+        split_values = data["split"].flatten() 
         unique_values = list(np.unique(split_values))
 
         logger.info(f"Unique values for split column '{split_col}': {unique_values}.")
@@ -128,8 +128,13 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, test_size=0):
         test_vals = set(unique_values[val_end:])
 
         def filter_data(values):
+            filtered = {}
             mask = np.isin(split_values, list(values))
-            return {k: v[mask] for k, v in data.items()}
+
+            for k, v in data.items():
+                filtered[k] = v[mask]
+
+            return filtered
 
         train_data = filter_data(train_vals)
         val_data = filter_data(val_vals)
