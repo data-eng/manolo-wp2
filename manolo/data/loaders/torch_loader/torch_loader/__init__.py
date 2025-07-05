@@ -10,6 +10,8 @@ __all__ = [
     "get_logger",
     "get_dir",
     "get_path",
+    "save_npz",
+    "load_npz",
     "save_npy",
     "load_npy",
     "save_json",
@@ -17,4 +19,5 @@ __all__ = [
     "standard_normalize",
     "robust_normalize",
     "get_stats",
+    "TSDataset",
 ]
