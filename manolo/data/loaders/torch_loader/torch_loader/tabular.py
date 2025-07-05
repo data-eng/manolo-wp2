@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+from torch.utils.data import Dataset
 
 from . import utils
 
@@ -113,3 +115,103 @@ def standard_normalize(dir, name, process, include, stats):
     utils.save_npz(data_norm, norm_path)
 
     logger.info(f"Normalized data saved to {norm_path}.")
+
+class TSDataset(Dataset):
+    def __init__(self, dir, name, seq_len, full_epoch=7680, per_epoch=True):
+        """
+        Initializes a time series dataset. It creates sequences from the input data by 
+        concatenating features and time columns. The target variable is stored separately.
+
+        :param dir: Directory containing the NumPy array dataset.
+        :param name: Name of the dataset (e.g. bitbrain-train-std-norm.npy).
+        :param seq_len: Length of the input sequence (number of time steps).
+        :param full_epoch: Length of a full epoch in samples (default is 7680).
+        :param per_epoch: Whether to create sequences in non-overlapping (True) or overlapping (False) epochs.
+        """
+        self.seq_len = seq_len
+        self.full_epoch = full_epoch
+        self.per_epoch = per_epoch
+
+        self.ds_name = name.split('-')[0]
+        self.data_path = utils.get_path(dir, filename=f"{name}.npz")
+        self.meta_path = utils.get_path(dir, filename=f"{self.ds_name}.json")
+
+        self.data = utils.load_npz(self.data_path)
+        self.metadata = utils.load_json(self.meta_path)
+
+        self.features_cols = self.metadata["features"]
+        self.time_cols = self.metadata["time"]
+        self.label_cols = self.metadata["labels"]
+        
+        self.X = np.concatenate([self.data["features"], self.data["time"]], axis=1)
+        self.y = self.data["labels"]
+
+        logger.debug(f'Initialized dataset with: samples={self.num_samples}, seq_len={seq_len}, num_seqs={self.num_seqs}, full_epochs={self.num_epochs}.')
+
+    def __len__(self):
+        """
+        Returns the number of sequences in the dataset.
+
+        :return: Length of the dataset.
+        """
+        return self.num_seqs
+
+    def __getitem__(self, idx):
+        """
+        Retrieves a sample from the dataset at the specified index.
+
+        :param idx: Index of the sample.
+        :return: Tuple of features and target tensors.
+        """
+        if self.per_epoch:
+            start_idx = idx * self.seq_len
+        else:
+            start_idx = idx
+
+        end_idx = start_idx + self.seq_len
+
+        X = self.X[start_idx:end_idx]
+        y = self.y[start_idx:end_idx]
+
+        X, y = torch.FloatTensor(X), torch.LongTensor(y)
+
+        return X, y
+    
+    @property
+    def num_samples(self):
+        """
+        Returns the total number of samples in the dataset.
+        
+        :return: Total number of samples.
+        """
+        return self.X.shape[0]
+    
+    @property
+    def num_epochs(self):
+        """
+        Returns the number of full epochs available based on the dataset size.
+
+        :return: Number of epochs.
+        """
+        return self.num_samples // self.full_epoch
+
+    @property
+    def max_seq_id(self):
+        """
+        Returns the maximum index for a sequence.
+
+        :return: Maximum index for a sequence.
+        """
+        return self.num_samples - self.seq_len
+    
+    @property
+    def num_seqs(self):
+        """
+        Returns the number of sequences that can be created from the dataset.
+
+        :return: Number of sequences.
+        """
+        if self.per_epoch:
+            return self.num_samples // self.seq_len
+        else:
+            return self.max_seq_id + 1

@@ -2,8 +2,7 @@ import random
 import multiprocessing
 import numpy as np
 import os
-import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
 from . import utils
 
@@ -195,128 +194,6 @@ def extract_weights(dir, name):
     logger.info(f"Saved class weights to {weights_path}: {weights}")
 
     return weights
-
-class TSDataset(Dataset):
-    def __init__(self, dir, name, seq_len, full_epoch=7680, per_epoch=True):
-        """
-        Initializes a time series dataset. It creates sequences from the input data by 
-        concatenating features and time columns. The target variable is stored separately.
-
-        :param dir: Directory containing the NumPy array dataset.
-        :param name: Name of the dataset (e.g. bitbrain-train-std-norm.npy).
-        :param seq_len: Length of the input sequence (number of time steps).
-        :param full_epoch: Length of a full epoch in samples (default is 7680).
-        :param per_epoch: Whether to create sequences in non-overlapping (True) or overlapping (False) epochs.
-        """
-        self.seq_len = seq_len
-        self.per_epoch = per_epoch
-
-        self.ds_name = name.split('-')[0]
-        self.data_path = utils.get_path(dir, filename=f"{name}.npy")
-        self.meta_path = utils.get_path(dir, filename=f"{self.ds_name}.json")
-
-        self.data = utils.load_npy(self.data_path)
-        self.metadata = utils.load_json(self.meta_path)
-
-        self.columns = self.metadata["columns"]
-        self.X = self.metadata["features"] + self.metadata["time"]
-        self.y = self.metadata["labels"]
-
-        self.X_ids = [self.columns.index(c) for c in self.X]
-        self.y_ids = [self.columns.index(c) for c in self.y]
-
-        logger.debug(f'Initializing dataset with: samples={self.num_samples}, samples/seq={seq_len}, seqs={self.num_seqs}, epochs={self.num_epochs} ')
-
-    def __len__(self):
-        """
-        Returns the number of sequences in the dataset.
-
-        :return: Length of the dataset.
-        """
-        return self.num_seqs
-
-    def __getitem__(self, idx):
-        """
-        Retrieves a sample from the dataset at the specified index.
-
-        :param idx: Index of the sample.
-        :return: Tuple of features and target tensors.
-        """
-        if self.per_epoch:
-            start_idx = idx * self.seq_len
-        else:
-            start_idx = idx
-
-        end_idx = start_idx + self.seq_len
-
-        seq_data = self.data[start_idx:end_idx]
-
-        X = seq_data[:, self.X_ids]
-        y = seq_data[:, self.y_ids]
-
-        X, y = torch.FloatTensor(X), torch.LongTensor(y)
-
-        return X, y
-    
-    @property
-    def num_samples(self):
-        """
-        Returns the total number of samples in the dataset.
-        
-        :return: Total number of samples.
-        """
-        return self.data.shape[0]
-    
-    @property
-    def num_epochs(self):
-        """
-        Returns the number of full epochs available based on the dataset size.
-
-        :return: Number of epochs.
-        """
-        return self.num_samples // self.full_epoch
-
-    @property
-    def max_seq_id(self):
-        """
-        Returns the maximum index for a sequence.
-
-        :return: Maximum index for a sequence.
-        """
-        return self.num_samples - self.seq_len
-    
-    @property
-    def num_seqs(self):
-        """
-        Returns the number of sequences that can be created from the dataset.
-
-        :return: Number of sequences.
-        """
-        if self.per_epoch:
-            return self.num_samples // self.seq_len
-        else:
-            return self.max_seq_id + 1
-        
-def create_dataset(dir, name, seq_len, full_epoch, per_epoch):
-    """
-    Create a TSDataset instance from a directory containing preprocessed data.
-
-    :param dir: Directory containing the NumPy array dataset.
-    :param name: Name of the dataset (e.g. bitbrain-train-std-norm.npy).
-    :param seq_len: Length of the input sequence (number of time steps).
-    :param full_epoch: Length of a full epoch in samples (default is 7680).
-    :param per_epoch: Whether to create sequences in non-overlapping (True) or overlapping (False) epochs.
-    :return: TSDataset instance.
-    """
-    dataset = TSDataset(dir=dir, 
-                        name=name, 
-                        seq_len=seq_len, 
-                        ull_epoch=full_epoch, 
-                        per_epoch=per_epoch)
-
-    logger.debug(f'Dataset created successfully!')
-
-    return dataset
 
 def create_dataloader(ds, batch_size, shuffle=[True, False, False], num_workers=None, drop_last=False):
     """

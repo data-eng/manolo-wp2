@@ -30,29 +30,33 @@ def main():
     logger.info(f"Calculated statistics from training data.")
 
     for process in ['train', 'val', 'test']:
+        logger.info(f"Normalizing {process} data with standard normalization.")
         tl.standard_normalize(dir=dir,
                               name=name,
                               process=process,
                               include=['HB_1', 'HB_2', 'time'],
                               stats=stats)
         
+        logger.info(f"Normalizing {process} data with robust normalization.")
         tl.robust_normalize(dir=dir,
                             name=name,
                             process=process,
                             include=['HB_1', 'HB_2', 'time'],
                             stats=stats)
         
-    #     ds = tl.create_dataset(dir=dir, 
-    #                            name=f'bitbrain-{process}-std-norm',
-    #                            seq_len=240, 
-    #                            full_epoch=7680, 
-    #                            per_epoch=True)
+        logger.info(f"Creating TSDataset for {process} data.")
+        ds = tl.TSDataset(dir=dir, 
+                          name=f'bitbrain-{process}-std-norm',
+                          seq_len=240,
+                          full_epoch=7680,
+                          per_epoch=True)
         
-    #     dls[process] = tl.create_dataloader(ds=ds, 
-    #                                         batch_size=512, 
-    #                                         shuffle=[True, False, False], 
-    #                                         num_workers=None, 
-    #                                         drop_last=False)
+        logger.info(f"Creating dataloader for {process} data.")
+        dls[process] = tl.create_dataloader(ds=ds, 
+                                            batch_size=512, 
+                                            shuffle=[True, False, False], 
+                                            num_workers=None, 
+                                            drop_last=False)
 
 if __name__ == "__main__":
     main()
