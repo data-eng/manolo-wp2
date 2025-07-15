@@ -1,12 +1,12 @@
 
 # Load library and function from manolo base
-from manolo.base.data import cifar10
+from manolo.base.data import cifar
 from manolo.base.models import ResNet
 from manolo.base.metrics import Accuracy
 
 # Data loading
 batch_size = 32
-_, test_loader = cifar10.load_cifar10(batch_size)
+_, test_loader = cifar.load_cifar10(batch_size)
 
 # Model loading
 model = ResNet.load_resnet18(pretrained=True)
