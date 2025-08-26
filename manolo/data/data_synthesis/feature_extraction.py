@@ -2,10 +2,11 @@ import time
 import pickle as pkl
 import torch
 from tqdm import tqdm
-from ..base.data.data_loader import load_dataset
-from ..base.models.network_initializer import initialize_network
-from ..base.metrics.parameter_counter import count_parameters_in_MB
+from manolo.base.data.data_loader import load_dataset
+from manolo.base.models.network_initializer import initialize_network
+from manolo.base.metrics.parameter_counter import count_parameters_in_MB
 import numpy as np
+import torch.backends.cudnn as cudnn
 
 
 def extract_features(args):
@@ -28,17 +29,6 @@ def extract_features(args):
     print("args = %s", args)
     #print("unparsed_args = %s", unparsed)
 
-    if args.use_wandb == "True":
-        # start a new wandb run to track this script
-        wandb_key = os.environ.get('WANDB_API_KEY')
-        # wandb_key = os.environ.get('TZ')    
-        wandb.init(
-            # set the wandb project where this run will be logged
-            project="feat_extraction",
-            # track hyperparameters and run metadata
-            name=args.note,
-            config=args
-        )
     """Main function to extract features."""
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = load_dataset(args)

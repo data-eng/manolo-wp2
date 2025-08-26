@@ -1,7 +1,7 @@
 import os
 
 from manolo.base.utils.data_synth_utils import parser_function
-from manolo.data.data_synthesis import train_cinn, generate_samples_class_conditioned, generate_samples_style_conditioned
+from manolo.data.data_synthesis.data_synthesis import train_cinn, generate_samples_class_conditioned, generate_samples_style_conditioned
 
 # read args
 args, unparsed = parser_function()

@@ -81,20 +81,19 @@ def get_dataset(args):
             transforms.Normalize(mean=mean,std=std),
         ])    
     else:
-        print("Dataset name not found...")
-        exit()
+        raise Exception('Dataset loader not implemented...')
 
     # define data loader
     if args.transform_train==False:
         train_transform = test_transform
 
-    train_loader = torch.utils.data.DataLoader(
+    train_loader = DataLoader(
             dataset(root      = args.img_root,
                     transform = train_transform,
                     train     = True,
                     download  = True),
             batch_size=args.batch_size, shuffle=args.train_shuffle, num_workers=args.n_workers, pin_memory=True)
-    test_loader = torch.utils.data.DataLoader(
+    test_loader = DataLoader(
             dataset(root      = args.img_root,
                     transform = test_transform,
                     train     = False,

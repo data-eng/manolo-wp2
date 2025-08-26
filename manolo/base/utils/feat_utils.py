@@ -218,12 +218,6 @@ def accuracy(output, target, topk=(1,)):
 	return res
 
 
-
-
-
-
-#### KNN evaluation ADAPTED from this repo: https://github.com/zhirongw/lemniscate.pytorch/blob/master/test.py
-
 def kNN_features(trainloader, testloader, K, sigma, device):
     net_time = AverageMeter()
     cls_time = AverageMeter()

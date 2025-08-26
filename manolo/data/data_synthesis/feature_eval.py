@@ -9,17 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 
-import wandb
+from manolo.base.data.dataset_utils import get_features_dataset
 
-from IPython import embed
-
-# Append dataset paths
-#sys.path.append('../dataset/')
-from ..base.data.cifar import get_dataset
-#from dataset_utils import get_features_dataset
-from ..base.data.dataset_utils import get_features_dataset
-
-from ..base.utils.feat_utils import parser_function, AverageMeter, accuracy, kNN_features
+from manolo.base.utils.feat_utils import parser_function, AverageMeter, accuracy, kNN_features
 
 
 def eval_features(args=None):
@@ -226,13 +218,6 @@ def test(test_loader, net, criterion, device):
         top1.update(prec1.item(), img.size(0))
         top5.update(prec5.item(), img.size(0))
 
-    print('Loss: {:.4f}, Prec@1: {:.2f}, Prec@5: {:.2f}'.format(losses.avg, top1.avg, top5.avg))
+    print('Evaluation metrics ==> Loss: {:.4f}, Prec@1: {:.2f}, Prec@5: {:.2f}'.format(losses.avg, top1.avg, top5.avg))
     return top1.avg, top5.avg
 
-
-# When run as a script, parse the arguments and run the evaluation.
-if __name__ == '__main__':
-    args, _ = parser_function()
-    results = run_eval(args)
-    if args.use_wandb == "True":
-        wandb.finish()
