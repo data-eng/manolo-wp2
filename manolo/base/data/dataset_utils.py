@@ -3,8 +3,6 @@ import torchvision.transforms as transforms
 import torchvision.datasets as dst
 import pickle as pkl
 from torch.utils.data import Dataset
-
-from IPython import embed
 import numpy as np
 
 
