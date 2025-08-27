@@ -1,8 +1,7 @@
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
 import torchvision.datasets as dst
-
+from torch.utils.data import DataLoader
 
 def load_cifar10(batch_size):
 
