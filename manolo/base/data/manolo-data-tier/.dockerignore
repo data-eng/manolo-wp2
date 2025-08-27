@@ -1,0 +1,12 @@
+**/bin
+**/backup
+**/obj
+**/logs
+**/python_wrapper
+**/node_modules
+.git
+.gitignore
+Dockerfile
+docker-compose*.yml
+*.md
+*.tar.gz

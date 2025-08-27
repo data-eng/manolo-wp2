@@ -1,0 +1,82 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>aspnet-ManoloDataTier-4d448481-b59c-44f3-ac8e-ed19217cfb62</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <DockerfileContext>.</DockerfileContext>
+        <Title>Manolo Data Tier Common</Title>
+        <Company>ARX.NET</Company>
+        <Product>Manolo Data Tier</Product>
+        <Version>1.0.0</Version>
+        <Authors>ARX.NET</Authors>
+        <PackageProjectUrl>https://manolo-project.eu/</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="Controllers\Data.cs"/>
+        <Compile Remove="Controllers\MetaData.cs"/>
+        <Compile Remove="backups\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
+        <PackageReference Include="FluentValidation" Version="11.11.0"/>
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0"/>
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0"/>
+        <PackageReference Include="MediatR" Version="12.4.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" NoWarn="NU1605"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.4" NoWarn="NU1605"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="5.0.17"/>
+        <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Https" Version="2.3.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.10"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Identity.Web" Version="2.15.2"/>
+        <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="2.15.2"/>
+        <PackageReference Include="Microsoft.Native.Quic.MsQuic.OpenSSL" Version="2.4.10" />
+        <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.6"/>
+        <PackageReference Include="Microsoft.Win32.SystemEvents" Version="9.0.0"/>
+        <PackageReference Include="MimeKit" Version="4.8.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
+        <PackageReference Include="System.Collections.Immutable" Version="9.0.0"/>
+        <PackageReference Include="System.Composition" Version="9.0.0"/>
+        <PackageReference Include="System.Composition.Hosting" Version="9.0.0"/>
+        <PackageReference Include="System.Composition.Runtime" Version="9.0.0"/>
+        <PackageReference Include="System.Reflection.Metadata" Version="9.0.0"/>
+        <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.0"/>
+        <PackageReference Include="System.Threading.Channels" Version="9.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ManoloDataTier.Common\ManoloDataTier.Common.csproj"/>
+        <ProjectReference Include="..\ManoloDataTier.Logic\ManoloDataTier.Logic.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Features\DataStructure\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Remove="backups\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Remove="backups\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="backups\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <_ContentIncludedByDefault Remove="backups\backup_20241126_144638.json"/>
+        <_ContentIncludedByDefault Remove="Config\appsettings.json"/>
+    </ItemGroup>
+
+</Project>
