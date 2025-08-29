@@ -4,29 +4,38 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution and project files only (cache restore layer)
+ARG USE_CACHE=true
+
 COPY *.sln ./
 COPY ManoloDataTier.Api/*.csproj ./ManoloDataTier.Api/
 COPY ManoloDataTier.Common/*.csproj ./ManoloDataTier.Common/
 COPY ManoloDataTier.Logic/*.csproj ./ManoloDataTier.Logic/
 COPY ManoloDataTier.Storage/*.csproj ./ManoloDataTier.Storage/
 
-# Restore dependencies (cached)
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet restore
+# Restore dependencies
+RUN if [ "$USE_CACHE" = "true" ]; then \
+      dotnet restore --packages /root/.nuget/packages ; \
+    else \
+      dotnet restore ; \
+    fi
 
-# Copy only source files for the API project
 COPY ManoloDataTier.Api ./ManoloDataTier.Api
 COPY ManoloDataTier.Common ./ManoloDataTier.Common
 COPY ManoloDataTier.Logic ./ManoloDataTier.Logic
 COPY ManoloDataTier.Storage ./ManoloDataTier.Storage
 
-# Build & publish in one step (cached NuGet)
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet publish ./ManoloDataTier.Api/ManoloDataTier.Api.csproj \
+# Build & publish
+RUN if [ "$USE_CACHE" = "true" ]; then \
+      dotnet publish ./ManoloDataTier.Api/ManoloDataTier.Api.csproj \
         -c Release \
         -o /app/publish \
-        --no-restore
+        --no-restore --packages /root/.nuget/packages ; \
+    else \
+      dotnet publish ./ManoloDataTier.Api/ManoloDataTier.Api.csproj \
+        -c Release \
+        -o /app/publish \
+        --no-restore ; \
+    fi
 
 # --------------------------------------------------------------------------------
 # 2. Runtime Stage
@@ -37,6 +46,6 @@ WORKDIR /app
 COPY --from=build /app/publish ./
 
 EXPOSE 5001
-EXPOSE 5002 
+EXPOSE 5002
 
 ENTRYPOINT ["dotnet", "ManoloDataTier.Api.dll"]

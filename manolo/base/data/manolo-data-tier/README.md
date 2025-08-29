@@ -6,7 +6,13 @@ Create docker image:
 
 Go to the project root folder (where the Dockerfile is) and run this :
 
-        docker build -t manolo_api:latest .
+Using cache (BuildKit available):
+
+    docker build --build-arg USE_CACHE=true -t manolo_api:latest .
+
+Without cache (No BuildKit available):
+
+    docker build --build-arg USE_CACHE=false -t manolo_api:latest .
 
 This makes a docker image with the name manolo_api
 
