@@ -1,8 +1,20 @@
 How to Use manolo_client docker image
 
-DOCKER:
+**DOCKER**:
 
-Create docker image:
+**Optional (Recommended for cache):**
+
+If you can and want to enable BuildKit, use the following command:
+
+Unix:
+
+    export DOCKER_BUILDKIT=1
+
+Windows:
+
+    $env:DOCKER_BUILDKIT=1
+
+**Create docker image:**
 
 Go to the project root folder (where the Dockerfile is) and run this :
 
@@ -16,13 +28,13 @@ Without cache (No BuildKit available):
 
 This makes a docker image with the name manolo_api
 
-Export docker image:
+**Export docker image:**
 
 After making the image you can export a .tar with this:
 
         docker save -o manolo_api.tar manolo_api:latest
 
-Import docker image:
+**Import docker image:**
 
 First download the docker image, the image's name is:
 
@@ -32,7 +44,7 @@ You can then load it from another machine by doing:
 
         docker load -i manolo_api.tar
 
-Next use:
+**Next use:**
 
     docker load -i manolo_api_latest.tar
 
@@ -68,7 +80,7 @@ The api is on
 In the environment you must add the DB variables that refer to the db from
 above, you can also
 
-Add the MLFLOW_URL which is the url of the mlflow server
+Add the `MLFLOW_URL` which is the url of the mlflow server
 
 After running the docker-compose file, you can use the api by going to
 
@@ -78,17 +90,21 @@ Documentation, it is on the swagger page at
 
 http://localhost:5000/swagger
 
-NOTES:
-By default the api creates a user with the username of manolo and the password of manolo
+**NOTES:**
 
-the api also creates:
+By default, the api creates a user with the:
+
+    username: manolo
+    password: manolo
+
+The api also creates:
 
     -predicates: "|_", "--", "->", "runs_on"
     -datastructures: "mlflow":1, "topology":2
 
-PYTHON WRAPPER:
+**PYTHON WRAPPER:**
 
-Be sure to install the requirements.txt file in the python_wrapper folder
+Be sure to install the `requirements.txt` file in the **python_wrapper** folder
 
 The demo folder is in :
 
@@ -99,8 +115,8 @@ each demo is a different way to use the api
 
 Be sure to read the comments and to change the variables to your own values (ports, paths, etc.)
 
-NOTE:
+**NOTE:**
     
-Due to SSL and Certificate issues, the api is not using https but http to use https 
+Due to SSL and Certificate issues, the api is **NOT** using https but http to use https 
 
-you must use self signed certificates and configure your reverse proxy to use them
+you must use self-signed certificates and configure your reverse proxy to use them
