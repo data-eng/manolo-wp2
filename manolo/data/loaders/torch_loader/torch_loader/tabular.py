@@ -6,17 +6,23 @@ from . import utils
 
 logger = utils.get_logger(level='DEBUG')
 
-def get_stats(dir, name):
+def get_stats(dir, name, done=False):
     """
     Load structured .npz train data and metadata, compute stats (mean, std, median, IQR) per column,
     and save the stats as a JSON file.
 
     :param dir: Directory containing {name}-train.npz and {name}.json.
     :param name: Dataset name prefix (e.g., 'bitbrain').
+    :param done: If True, skip the stats calculation.
     :return: Dict of stats keyed by column name.
     """
     data_path = utils.get_path(dir, filename=f"{name}-train.npz")
     meta_path = utils.get_path(dir, filename=f"{name}.json")
+    stats_path = utils.get_path(dir, filename=f"{name}-stats.json")
+
+    if done:
+        logger.info(f"Skipping stats calculation for {data_path}.")
+        return utils.load_json(stats_path)
 
     data = utils.load_npz(data_path)
     metadata = utils.load_json(meta_path)
@@ -43,14 +49,13 @@ def get_stats(dir, name):
                 'iqr': float(iqr)
             }
 
-    stats_path = utils.get_path(dir, filename=f"{name}-stats.json")
     utils.save_json(data=stats, path=stats_path)
 
     logger.info(f"Saved statistics JSON to {stats_path}.")
 
     return stats
 
-def robust_normalize(dir, name, process, include, stats):
+def robust_normalize(dir, name, process, include, stats, done=False):
     """
     Normalize structured .npz dataset using robust scaling (median and IQR) from precomputed stats. Applies normalization only to specified columns across any sub-array.
 
@@ -59,9 +64,14 @@ def robust_normalize(dir, name, process, include, stats):
     :param process: Process type (e.g., 'train', 'val', 'test').
     :param include: List of column names to include in normalization.
     :param stats: Dict of precomputed stats (median, iqr) keyed by column name.
+    :param done: If True, skip the normalization process.
     """
     data_path = utils.get_path(dir, filename=f"{name}-{process}.npz")
     meta_path = utils.get_path(dir, filename=f"{name}.json")
+
+    if done:
+        logger.info(f"Skipping robust normalization for {data_path}.")
+        return
 
     data = utils.load_npz(data_path)
     metadata = utils.load_json(meta_path)
@@ -83,7 +93,7 @@ def robust_normalize(dir, name, process, include, stats):
 
     logger.info(f"Robust normalized data saved to {norm_path}.")
 
-def standard_normalize(dir, name, process, include, stats):
+def standard_normalize(dir, name, process, include, stats, done=False):
     """
     Normalize structured .npz dataset using standard scaling (mean and std) from precomputed stats. Applies normalization only to specified columns across any sub-array.
 
@@ -92,9 +102,14 @@ def standard_normalize(dir, name, process, include, stats):
     :param process: Process type (e.g., 'train', 'val', 'test').
     :param include: List of column names to include in normalization.
     :param stats: Dict of precomputed stats (mean, std) keyed by column name.
+    :param done: If True, skip the normalization process.
     """
     data_path = utils.get_path(dir, filename=f"{name}-{process}.npz")
     meta_path = utils.get_path(dir, filename=f"{name}.json")
+
+    if done:
+        logger.info(f"Skipping standard normalization for {data_path}.")
+        return
 
     data = utils.load_npz(data_path)
     metadata = utils.load_json(meta_path)
@@ -117,33 +132,33 @@ def standard_normalize(dir, name, process, include, stats):
     logger.info(f"Normalized data saved to {norm_path}.")
 
 class TSDataset(Dataset):
-    def __init__(self, dir, name, seq_len, full_epoch=7680, per_epoch=True):
+    def __init__(self, dir, name, seq_len, full_epoch=7680, per_epoch=True, time_include=False):
         """
-        Initializes a time series dataset. It creates sequences from the input data by 
-        concatenating features and time columns. The target variable is stored separately.
+        Initializes a time series dataset. Returns for each sample:
+
+            - X: current sequence
+            - Xn: next sequence (t+1)
+            - y: target labels for the current sequence
 
         :param dir: Directory containing the NumPy array dataset.
         :param name: Name of the dataset (e.g. bitbrain-train-std-norm.npy).
         :param seq_len: Length of the input sequence (number of time steps).
         :param full_epoch: Length of a full epoch in samples (default is 7680).
         :param per_epoch: Whether to create sequences in non-overlapping (True) or overlapping (False) epochs.
+        :param time_include: Whether to include the time features in the input data.
         """
         self.seq_len = seq_len
         self.full_epoch = full_epoch
         self.per_epoch = per_epoch
 
-        self.ds_name = name.split('-')[0]
         self.data_path = utils.get_path(dir, filename=f"{name}.npz")
-        self.meta_path = utils.get_path(dir, filename=f"{self.ds_name}.json")
-
         self.data = utils.load_npz(self.data_path)
-        self.metadata = utils.load_json(self.meta_path)
-
-        self.features_cols = self.metadata["features"]
-        self.time_cols = self.metadata["time"]
-        self.label_cols = self.metadata["labels"]
         
-        self.X = np.concatenate([self.data["features"], self.data["time"]], axis=1)
+        if time_include:
+            self.X = np.concatenate([self.data["features"], self.data["time"]], axis=1)
+        else:
+            self.X = self.data["features"]
+
         self.y = self.data["labels"]
 
         logger.debug(f'Initialized dataset with: samples={self.num_samples}, seq_len={seq_len}, num_seqs={self.num_seqs}, full_epochs={self.num_epochs}.')
@@ -169,13 +184,20 @@ class TSDataset(Dataset):
             start_idx = idx
 
         end_idx = start_idx + self.seq_len
+        next_start_idx = end_idx
+        next_end_idx = end_idx + self.seq_len
+
+        if next_end_idx > len(self.X):
+            next_start_idx = start_idx
+            next_end_idx = end_idx
 
         X = self.X[start_idx:end_idx]
+        Xn = self.X[next_start_idx:next_end_idx]
         y = self.y[start_idx:end_idx]
 
-        X, y = torch.FloatTensor(X), torch.LongTensor(y)
+        X, Xn, y = torch.FloatTensor(X), torch.FloatTensor(Xn), torch.LongTensor(y)
 
-        return X, y
+        return X, Xn, y
     
     @property
     def num_samples(self):
