@@ -32,14 +32,14 @@ services:
       DB_NAME: manolo_db
       DB_USERNAME: manolo
       DB_PASSWORD: manolo
-      MLFLOW_URL: http://ai-server/mlflow
-      CERTIFICATE_PATH: "/root/cert.pem"
-      CERTIFICATE_PASSWORD: "manolo"
-    volumes:
-    - /home/ADDC/garopoulos/Projects/manolo-data-tier/ManoloDataTier.Api/certs/localhost.pfx:/root/cert.pem:ro
+      MLFLOW_URL: http://{MLFLOW_URL} # Replace with your mlflow url
+    #    CERTIFICATE_PATH: "/root/cert.pem" # Certificate path make sure to mount the certificate
+    #    CERTIFICATE_PASSWORD: "manolo"
+    #    volumes:
+    #    - /certs/localhost.pfx:/root/cert.pem:ro
     ports:
-      - "5002:5002"
-      - "5001:5001"
+      - "5002:5002" # HTTPS
+      - "5001:5001" # HTTP
     profiles:
       - dev
     networks:

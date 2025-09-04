@@ -38,14 +38,14 @@ if (env.IsProduction()){
     var dbName = Environment.GetEnvironmentVariable("DB_NAME") ?? "manolo_db";
     var dbUser = Environment.GetEnvironmentVariable("DB_USERNAME") ?? "manolo";
     var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "manolo";
-    mlflowUrl = Environment.GetEnvironmentVariable("MLFLOW_URL") ?? "http://ai-server/mlflow";
+    mlflowUrl = Environment.GetEnvironmentVariable("MLFLOW_URL") ?? string.Empty;
 
     connectionString =
         $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
 }
 else{
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
-    mlflowUrl        = builder.Configuration.GetSection("ConnectionStrings")["MlflowUrl"]!;
+    mlflowUrl        = builder.Configuration.GetSection("ConnectionStrings")["MlflowUrl"] ?? string.Empty;
 }
 
 builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
@@ -59,21 +59,24 @@ builder.WebHost.ConfigureKestrel((context, options) => {
     options.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(10);
 
     var certPath = Environment.GetEnvironmentVariable("CERTIFICATE_PATH")
-                ?? context.Configuration["Kestrel:Certificates:Default:Path"] ?? throw new InvalidOperationException("Certificate path not found.");
+                ?? context.Configuration["Kestrel:Certificates:Default:Path"];
 
     var certPassword = Environment.GetEnvironmentVariable("CERTIFICATE_PASSWORD")
-                    ?? context.Configuration["Kestrel:Certificates:Default:Password"] ?? throw new InvalidOperationException("Certificate password not found.");
+                    ?? context.Configuration["Kestrel:Certificates:Default:Password"];
 
-    options.ListenAnyIP(port, listenOptions => {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
-        listenOptions.UseHttps(certPath, certPassword);
-        listenOptions.UseConnectionLogging();
-    });
-
-    options.ListenAnyIP(port + 1, listenOptions => {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
-        listenOptions.UseConnectionLogging();
-    });
+    if (!string.IsNullOrEmpty(certPath) && !string.IsNullOrEmpty(certPassword)){
+        options.ListenAnyIP(port, listenOptions => {
+            listenOptions.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
+            listenOptions.UseHttps(certPath, certPassword);
+            listenOptions.UseConnectionLogging();
+        });
+    }
+    else{
+        options.ListenAnyIP(port, listenOptions => {
+            listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+            listenOptions.UseConnectionLogging();
+        });
+    }
 
 });
 
@@ -216,7 +219,6 @@ app.MapHub<SignalRHub>("/signalr");
 
 app.UseSwagger();
 app.UseSwaggerUI(c => { c.SwaggerEndpoint("/manolo-data-tier/swagger/v1/swagger.json", "API V1"); });
-
 
 app.UseRouting();
 
