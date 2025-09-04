@@ -56,7 +56,7 @@ The command below works if you are in the same folder as the docker-compose file
 
     docker-compose --profile dev up
 
-The starts the db and the api
+This starts the db and the api. Note that `requests 2.31.0` must be installed.
 
 The db is on
 
