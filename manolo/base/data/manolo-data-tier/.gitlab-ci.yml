@@ -1,0 +1,34 @@
+stages:
+  - deploy
+
+.deploy_ssh_setup: &deploy_ssh_setup
+  - apk add --no-cache openssh-client
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - ssh-keyscan -H ai-server >> ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+
+deploy_to_server:
+  stage: deploy
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+  script:
+    - *deploy_ssh_setup
+
+    - tar czf manolo-data-tier.tar.gz .
+
+    - scp manolo-data-tier.tar.gz root@ai-server:/opt/
+
+    - |
+      ssh root@ai-server bash -s <<'EOF'
+        tar -xzf /opt/manolo-data-tier.tar.gz -C /opt/manolo-data-tier --strip-components=1
+        mv /opt/manolo-data-tier/logs /opt/manolo-data-tier/logs_backup_$(date +%s) || true
+        mkdir -p /opt/manolo-data-tier/logs
+      
+        systemctl restart manolo-dev.service
+      EOF
+  tags:
+    - long-duration-low-priority

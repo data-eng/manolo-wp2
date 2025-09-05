@@ -1,0 +1,26 @@
+    project url: 
+
+    https://gitlab.arx.net/garopoulos/manolo-data-tier
+
+    Python part:
+        the python_wrapper folder 
+
+    Create docker image:
+
+        go to the project root folder and run this :
+
+        docker build -t manolo_api:latest .
+
+        this makes a docker image with the name manolo_api 
+
+    Export docker image:
+
+        after making the image you can export a .tar with this:
+
+        docker save -o manolo_api.tar manolo_api:latest
+
+    Import docker image:
+
+        after making the tar you can load it from another machine by doing:
+
+        docker load -i manolo_api.tar

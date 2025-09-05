@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: manolo_db
+    environment:
+      POSTGRES_USER: manolo
+      POSTGRES_PASSWORD: manolo
+      POSTGRES_DB: manolo_db
+    ports:
+      - "8432:5432"
+    volumes:
+      - ./storage:/opt/storage
+    profiles:
+      - dev
+      - db
+    networks:
+      - manolo_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: manolo_api
+    container_name: manolo_api
+    depends_on:
+      db:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: manolo_db
+      DB_USERNAME: manolo
+      DB_PASSWORD: manolo
+      MLFLOW_URL: http://{MLFLOW_URL} # Replace with your mlflow url
+    #    CERTIFICATE_PATH: "/root/cert.pem" # Certificate path make sure to mount the certificate
+    #    CERTIFICATE_PASSWORD: "manolo"
+    #    volumes:
+    #    - /certs/localhost.pfx:/root/cert.pem:ro
+    ports:
+      - "5002:5002" # HTTPS
+      - "5001:5001" # HTTP
+    profiles:
+      - dev
+    networks:
+      - manolo_net
+
+networks:
+  manolo_net:
+    driver: bridge
