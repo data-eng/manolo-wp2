@@ -3,22 +3,22 @@ import logging
 import asyncio
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 
-from .core.auth import AuthMixin
-from .core.encryption import EncryptionMixin
-from .core.file_utils import FileUtilsMixin
-from .core.http_utils import HttpUtilsMixin
-from .core.logger import LoggerMixin
-from .core.metadata import MetadataMixin
+from core.auth import AuthMixin
+from core.encryption import EncryptionMixin
+from core.file_utils import FileUtilsMixin
+from core.http_utils import HttpUtilsMixin
+from core.logger import LoggerMixin
+from core.metadata import MetadataMixin
 
-from .modules.alias import AliasMixin
-from .modules.datastructure import DataStructureMixin
-from .modules.item import ItemMixin
-from .modules.kvp import KeyValueMixin
-from .modules.predicate import PredicateMixin
-from .modules.relation import RelationMixin
+from modules.alias import AliasMixin
+from modules.datastructure import DataStructureMixin
+from modules.item import ItemMixin
+from modules.kvp import KeyValueMixin
+from modules.predicate import PredicateMixin
+from modules.relation import RelationMixin
 
-from .helpers.mlflow_helpers import MlflowHelper
-from .helpers.generic_helpers import GenericHelpers
+from helpers.mlflow_helpers import MlflowHelper
+from helpers.generic_helpers import GenericHelpers
 
 
 class ManoloClient(

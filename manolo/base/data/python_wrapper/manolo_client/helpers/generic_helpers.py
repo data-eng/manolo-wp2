@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Union, List, Any
 from concurrent.futures import ThreadPoolExecutor
 import imghdr
 
-from manolo_client.enums.DefaultDatastucts import DefaultDatastucts
+from enums.DefaultDatastucts import DefaultDatastucts
 
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 
 
 class GenericHelpers:

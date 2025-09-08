@@ -1,10 +1,13 @@
 import base64
 import logging
 
-from manolo_client.client import ManoloClient
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from manolo_client.enums.DefaultDatastucts import DefaultDatastucts
-from manolo_client.helpers.mlflow_helpers import MlflowHelper
+from client import ManoloClient
+
+from enums.DefaultDatastucts import DefaultDatastucts
+from helpers.mlflow_helpers import MlflowHelper
 
 key_b64 = "kVnA8+8nFbGHWJ9fAptF6Bp22E5h8lfUPJ1/jjvgL0c="  # Base64 encoded key
 

@@ -2,7 +2,7 @@ import json
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 
 
 class DataStructureMixin:

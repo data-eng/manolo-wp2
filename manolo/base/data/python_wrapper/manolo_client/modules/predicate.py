@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 class PredicateMixin:
     def create_predicate(self: "ManoloClient" , description: str):
         """Create a new predicate."""

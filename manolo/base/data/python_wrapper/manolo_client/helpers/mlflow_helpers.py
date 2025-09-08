@@ -1,12 +1,11 @@
-import re
 from typing import TYPE_CHECKING, Optional
-from manolo_client.enums.DefaultDatastucts import DefaultDatastucts
-from manolo_client.enums.MlflowSearchParams import MlflowSearchParams
-from manolo_client.helpers.generic_helpers import GenericHelpers
+from enums.DefaultDatastucts import DefaultDatastucts
+from enums.MlflowSearchParams import MlflowSearchParams
+from helpers.generic_helpers import GenericHelpers
 
 
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 
 BASE = "mlflow://"
 
