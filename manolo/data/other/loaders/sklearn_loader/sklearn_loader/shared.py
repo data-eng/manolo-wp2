@@ -1,6 +1,6 @@
-import random
 import numpy as np
 import os
+from sklearn.model_selection import train_test_split
 
 from . import utils
 
@@ -47,15 +47,15 @@ def shift_labels(dir, name, done=False):
     utils.save_npz(data=data, path=data_path)
     logger.info(f"Shifted labels {label_cols} in {data_path} so values start at 0.")
 
-def split_data(dir, name, train_size=0.75, val_size=0.25, infer_size=0, done=False):
+def split_data(dir, name, train_size=0.8, infer_size=0.2, done=False):
     """
-    Split structured .npz dataset into training, validation, and inference sets based on unique values in the split column.
+    Split structured .npz dataset into training and inference sets based on unique values in the split column.
+    Uses scikit-learn's train_test_split for randomization.
 
     :param dir: Directory containing the dataset.
     :param name: Name of the dataset (e.g., 'bitbrain').
-    :param train_size: Proportion of nights to use for training.
-    :param val_size: Proportion of nights to use for validation.
-    :param infer_size: Proportion of nights to use for inference.
+    :param train_size: Proportion of data (or groups) for training.
+    :param infer_size: Proportion for inference.
     :param done: If True, skip the splitting process.
     """
     data_path = utils.get_path(dir, filename=f'{name}.npz')
@@ -66,7 +66,6 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, infer_size=0, done=Fal
         return   
 
     train_path = utils.get_path(dir, filename=f'{name}-train.npz')
-    val_path = utils.get_path(dir, filename=f'{name}-val.npz')
     infer_path = utils.get_path(dir, filename=f'{name}-infer.npz')
 
     data = utils.load_npz(data_path)
@@ -80,100 +79,53 @@ def split_data(dir, name, train_size=0.75, val_size=0.25, infer_size=0, done=Fal
         total = len(next(iter(data.values())))
         indices = list(range(total))
 
-        random.seed(42)
-        random.shuffle(indices)
-
-        train_end = int(total * train_size)
-        val_end = train_end + int(total * val_size)
-
-        train_idx = indices[:train_end]
-        val_idx = indices[train_end:val_end]
-        infer_idx = indices[val_end:]
+        train_idx, infer_idx = train_test_split(
+            indices, train_size=train_size, test_size=infer_size, random_state=42, shuffle=True
+        )
 
         def subset_data(idxs):
             return {k: v[idxs] for k, v in data.items()}
 
         train_data = subset_data(train_idx)
-        val_data = subset_data(val_idx)
         infer_data = subset_data(infer_idx)
-    
+
     else:
-        split_values = data["split"].flatten() 
-        unique_values = list(np.unique(split_values))
+        split_values = data["split"].flatten()
+        unique_values = np.unique(split_values)
 
-        logger.info(f"Unique values for split column '{split_col}': {unique_values}.")
-
-        random.seed(42)
-        random.shuffle(unique_values)
-
-        n = len(unique_values)
-
-        if train_size + val_size + infer_size == 0:
-            raise ValueError("All sets have size 0, which is invalid.")
-        if train_size + val_size + infer_size > 1:
-            raise ValueError("Sum of train, val, and infer sizes must not exceed 1.")
-        
-        raw = {'train': round(n * train_size), 'val': round(n * val_size), 'infer': round(n * infer_size)}
-        total = sum(raw.values())
-
-        while total > n:
-            max_key = max(raw, key=raw.get)
-            raw[max_key] -= 1
-            total -= 1
-            
-        while total < n:
-            min_key = min(raw, key=raw.get)
-            raw[min_key] += 1
-            total += 1
-        
-        train_end = raw['train']
-        val_end = train_end + raw['val']
-
-        train_vals = set(unique_values[:train_end])
-        val_vals = set(unique_values[train_end:val_end])
-        infer_vals = set(unique_values[val_end:])
+        train_vals, infer_vals = train_test_split(
+            unique_values, train_size=train_size, test_size=infer_size, random_state=42, shuffle=True
+        )
 
         def filter_data(values):
-            filtered = {}
-            mask = np.isin(split_values, list(values))
-
-            for k, v in data.items():
-                filtered[k] = v[mask]
-
-            return filtered
+            mask = np.isin(split_values, values)
+            return {k: v[mask] for k, v in data.items()}
 
         train_data = filter_data(train_vals)
-        val_data = filter_data(val_vals)
         infer_data = filter_data(infer_vals)
 
         logger.info(f"Train values: {sorted(train_vals)}")
-        logger.info(f"Validation values: {sorted(val_vals)}")
-        logger.info(f"Inference values: {sorted(infer_vals)}")
+        logger.info(f"Infer values: {sorted(infer_vals)}")
 
-        assert train_vals.isdisjoint(val_vals), "Overlap in train and val nights!"
-        assert train_vals.isdisjoint(infer_vals), "Overlap in train and infer nights!"
-        assert val_vals.isdisjoint(infer_vals), "Overlap in val and infer nights!"   
+        assert train_vals.size + infer_vals.size == unique_values.size, "Mismatch in group splitting!"
 
     utils.save_npz(train_data, train_path)
-    utils.save_npz(val_data, val_path)
     utils.save_npz(infer_data, infer_path)
 
     logger.info(f"Data split into train ({len(next(iter(train_data.values())))} samples), "
-        f"val ({len(next(iter(val_data.values())))} samples), "
-        f"infer ({len(next(iter(infer_data.values())))} samples).")
+                f"infer ({len(next(iter(infer_data.values())))} samples).")
 
 def extract_weights(dir, name, process, done=False):
     """
-    Calculate class weights from the structured .npz dataset to handle class imbalance, and save them to a JSON file. Supports multiple weight columns.
+    Calculate class weights from the training structured .npz dataset to handle class imbalance, and save them to a JSON file. Supports multiple weight columns.
 
     :param dir: Directory to save the weights file.
     :param name: Name of the dataset (e.g., 'bitbrain').
     :param process: Process type (e.g., 'train', 'val', 'infer').
     :param done: If True, skip the weight extraction process.
     """
-    data_path = utils.get_path(dir, filename=f'{name}-{process}.npz')
+    data_path = utils.get_path(dir, filename=f'{name}-train.npz')
     meta_path = utils.get_path(dir, filename=f'{name}.json')
-    
     weights_path = utils.get_path(dir, filename=f'{name}-weights.json')
 
     if done:
@@ -181,7 +133,7 @@ def extract_weights(dir, name, process, done=False):
         return utils.load_json(weights_path)
 
     if not os.path.exists(data_path):
-        raise FileNotFoundError(f"Data file not found: {data_path}. Cannot extract weights.")
+        raise FileNotFoundError(f"Training data file not found: {data_path}. Cannot extract weights.")
 
     data = utils.load_npz(data_path)
     metadata = utils.load_json(meta_path)
@@ -204,4 +156,27 @@ def extract_weights(dir, name, process, done=False):
         weights[col] = dict(sorted(col_weights.items()))
 
     utils.save_json(data=weights, path=weights_path)
-    logger.info(f"Saved class weights to {weights_path}: {weights}.")
+    logger.info(f"Saved class weights to {weights_path}: {weights}")
+
+def create_dataset(dir, name, time_include):
+    """
+    Load a structured .npz dataset and return (X, y) for sklearn models.
+
+    :param dir: Directory containing the dataset.
+    :param name: Dataset base name without .npz extension (e.g., 'bitbrain-train-std-norm').
+    :param time_include: Whether to include the time features in the input data.
+    :return: Tuple (X, y) as numpy arrays.
+    """
+    data_path = utils.get_path(dir, filename=f"{name}.npz")
+    data = utils.load_npz(data_path)
+
+    X = data["features"]
+    y = data["labels"]
+    t = data["time"]
+
+    if time_include:
+        X = np.concatenate([X, t], axis=1)
+
+    logger.debug(f"Created sklearn dataset from {name}: X={X.shape}, y={y.shape}")
+
+    return X, y
