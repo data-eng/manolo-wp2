@@ -4,9 +4,9 @@ from . import shared as sh
 
 logger = utils.get_logger(level='INFO')
 
-def main(dir, name, process, train_size, val_size, infer_size, seq_len, norm_include, full_epoch, per_epoch, time_include, shifted, splitted, weighted, analyzed, normalized, weights_from, stats_from):
+def main(dir, name, process, train_size, infer_size, norm_include, time_include, shifted, splitted, weighted, analyzed, normalized, weights_from, stats_from):
     """
-    Main function to create torch loaders from the Bitbrain dataset, suitable for machine learning tasks.
+    Main function to create sklearn loaders from the Bitbrain dataset, suitable for machine learning tasks.
     """
     dls = {}
     stats = None
@@ -14,13 +14,14 @@ def main(dir, name, process, train_size, val_size, infer_size, seq_len, norm_inc
                    "work": ["infer"]}
 
     logger.info("Shifting labels in the entire dataset.")
-    sh.shift_labels(dir, name=name, done=shifted)
+    sh.shift_labels(dir=dir,
+                    name=name,
+                    done=shifted)
 
     logger.info("Splitting data into train, val, infer.")
     sh.split_data(dir=dir, 
                   name=name, 
                   train_size=train_size, 
-                  val_size=val_size, 
                   infer_size=infer_size,
                   done=splitted)
 
@@ -28,10 +29,10 @@ def main(dir, name, process, train_size, val_size, infer_size, seq_len, norm_inc
         if weights_from == p:
             logger.info(f"Calculating class weights for {p} data.")
             sh.extract_weights(dir=dir,
-                        name=name,
-                        process=p,
-                        done=weighted)
-        
+                            name=name,
+                            process=p,
+                            done=weighted)
+
         if stats_from == p:
             logger.info(f"Calculating statistics for {p} data.")
             stats = tl.get_stats(dir=dir,
@@ -55,13 +56,10 @@ def main(dir, name, process, train_size, val_size, infer_size, seq_len, norm_inc
                             stats=stats,
                             done=normalized)
         
-        logger.info(f"Creating TSDataset for {p} data.")
-        dls[p] = tl.TSDataset(dir=dir, 
-                              name=f'{name}-{p}-rbst-norm',
-                              seq_len=seq_len,
-                              full_epoch=full_epoch,
-                              per_epoch=per_epoch,
-                              time_include=time_include)
+        logger.info(f"Creating dataset for {p} data.")
+        dls[p] = sh.create_dataset(dir=dir,
+                                   name=f'{name}-{p}-rbst-norm',
+                                   time_include=time_include)
     
     return tuple(dls[p] for p in process_map[process])
 

@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "torch_loader"
-version = "0.44"
+name = "sklearn_loader"
+version = "0.8"
 packages = [
-    { include = "torch_loader" }
+    { include = "sklearn_loader" }
 ]
-description = "Torch Loader"
+description = "Sklearn Loader"
 authors = [ "Natalia Koliou <nataliakoliou@iit.demokritos.gr>",
 	        "Stasinos Konstantopoulos <konstant@iit.demokritos.gr>" ]
 readme = "README.md"
@@ -12,7 +12,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.14"  
 numpy = "^1.26"
-torch = "^2.7.0"
+scikit-learn = "^1.4"
 
 [build-system]
 requires = ["poetry-core"]
