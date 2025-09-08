@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from enums.DefaultDatastucts import DefaultDatastucts
+from ..enums.DefaultDatastucts import DefaultDatastucts
 if TYPE_CHECKING:
     from client import ManoloClient
 

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from enums.DefaultDatastucts import DefaultDatastucts
+from ..enums.DefaultDatastucts import DefaultDatastucts
 
 if TYPE_CHECKING:
     from client import ManoloClient

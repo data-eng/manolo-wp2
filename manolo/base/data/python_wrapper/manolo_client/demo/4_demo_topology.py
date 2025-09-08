@@ -5,7 +5,7 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from client import ManoloClient
-from enums.DefaultDatastucts import DefaultDatastucts
+from ..enums.DefaultDatastucts import DefaultDatastucts
 
 key_b64 = "kVnA8+8nFbGHWJ9fAptF6Bp22E5h8lfUPJ1/jjvgL0c="  # Base64 encoded key
 # Path to the JSON file change to your path

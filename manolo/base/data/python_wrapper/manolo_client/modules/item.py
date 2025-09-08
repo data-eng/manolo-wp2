@@ -12,7 +12,7 @@ import threading
 from typing import TYPE_CHECKING, List, Optional
 import asyncio
 
-from enums.ManifestKeys import ManifestKeys
+from ..enums.ManifestKeys import ManifestKeys
 if TYPE_CHECKING:
     from client import ManoloClient
 

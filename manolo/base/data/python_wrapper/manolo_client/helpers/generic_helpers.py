@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Union, List, Any
 from concurrent.futures import ThreadPoolExecutor
 import imghdr
 
-from enums.DefaultDatastucts import DefaultDatastucts
+from ..enums.DefaultDatastucts import DefaultDatastucts
 
 if TYPE_CHECKING:
     from client import ManoloClient

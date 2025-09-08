@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
-from enums.DefaultDatastucts import DefaultDatastucts
-from enums.MlflowSearchParams import MlflowSearchParams
-from helpers.generic_helpers import GenericHelpers
+from ..enums.DefaultDatastucts import DefaultDatastucts
+from ..enums.MlflowSearchParams import MlflowSearchParams
+from ..helpers.generic_helpers import GenericHelpers
 
 
 if TYPE_CHECKING:
