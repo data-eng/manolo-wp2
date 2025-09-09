@@ -3,8 +3,7 @@ import hashlib
 import json
 import mimetypes
 import os
-import imghdr
-import time
+import filetype
 from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
@@ -480,8 +479,9 @@ class ItemMixin:
                     guessed_ext = mimetypes.guess_extension(mime_type)
                     ext = guessed_ext if guessed_ext else ext
                 else:
-                    guessed = imghdr.what(None, h=raw_data)
-                    ext = f".{guessed}" if guessed else ext
+                    kind = filetype.guess(raw_data)
+                    if kind:
+                        ext = f".{kind.extension}"
 
                 folder_parts = {
                     int(kvp.Key.split("_")[1]): kvp.Value

@@ -6,7 +6,7 @@ import types
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Union, List, Any
 from concurrent.futures import ThreadPoolExecutor
-import imghdr
+import filetype
 
 from ..enums.DefaultDatastucts import DefaultDatastucts
 
@@ -227,8 +227,9 @@ class GenericHelpers:
                 guessed_ext = mimetypes.guess_extension(mime_type)
                 ext = guessed_ext if guessed_ext else ext
             else:
-                guessed = imghdr.what(None, h=raw_data)
-                ext = f".{guessed}" if guessed else ext
+                kind = filetype.guess(raw_data)
+                if kind:
+                    ext = f".{kind.extension}"
 
             folder_parts = {
                 int(kvp.Key.split("_")[1]): kvp.Value

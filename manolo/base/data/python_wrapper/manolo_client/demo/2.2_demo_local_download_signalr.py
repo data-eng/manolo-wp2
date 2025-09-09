@@ -2,9 +2,9 @@ import base64
 import logging
 import asyncio
 import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from client import ManoloClient
+from manolo_client.client import ManoloClient
 
 DSN = 1000  # Data structure number
 key_b64 = "kVnA8+8nFbGHWJ9fAptF6Bp22E5h8lfUPJ1/jjvgL0c="  # Base64 encoded key
