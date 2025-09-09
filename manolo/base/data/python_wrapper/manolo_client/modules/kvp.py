@@ -2,9 +2,9 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from manolo_client.enums.DefaultDatastucts import DefaultDatastucts
+from ..enums.DefaultDatastucts import DefaultDatastucts
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 
 
 class KeyValueMixin:

@@ -3,8 +3,7 @@ import hashlib
 import json
 import mimetypes
 import os
-import imghdr
-import time
+import filetype
 from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
@@ -12,9 +11,9 @@ import threading
 from typing import TYPE_CHECKING, List, Optional
 import asyncio
 
-from manolo_client.enums.ManifestKeys import ManifestKeys
+from ..enums.ManifestKeys import ManifestKeys
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 
 
 class ItemMixin:
@@ -480,8 +479,9 @@ class ItemMixin:
                     guessed_ext = mimetypes.guess_extension(mime_type)
                     ext = guessed_ext if guessed_ext else ext
                 else:
-                    guessed = imghdr.what(None, h=raw_data)
-                    ext = f".{guessed}" if guessed else ext
+                    kind = filetype.guess(raw_data)
+                    if kind:
+                        ext = f".{kind.extension}"
 
                 folder_parts = {
                     int(kvp.Key.split("_")[1]): kvp.Value

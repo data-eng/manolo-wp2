@@ -1,5 +1,8 @@
 import base64
 import logging
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from manolo_client.client import ManoloClient
 
 IMAGE_ROOT = "images"  # Path to the folder containing the images change to your path

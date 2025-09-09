@@ -8,10 +8,10 @@ from typing import Optional, Union
 
 from typing import TYPE_CHECKING
 
-from manolo_client.enums.ManifestKeys import ManifestKeys
+from ..enums.ManifestKeys import ManifestKeys
 
 if TYPE_CHECKING:
-    from manolo_client.client import ManoloClient
+    from client import ManoloClient
 
 
 class FileUtilsMixin:
