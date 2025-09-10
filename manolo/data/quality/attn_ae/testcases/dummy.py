@@ -3,6 +3,7 @@ from attn_ae.infer import main as infer
 from attn_ae.utils import *
 
 from converter import create_npz, create_metadata
+from torch_loader import
 import numpy as np
 
 def create_med_dataset():
