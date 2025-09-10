@@ -50,9 +50,29 @@ def main():
     ds_dir = get_dir('..', 'testcases', 'data')
     npz_path, metadata_path = create_med_dataset()
 
-    # loaders = preprocess('dir': ds_dir,
-    #                      'name': 'med',
-    #                      ...)
+    loaders_dict = {}
+
+    for process in ['prepare', 'work']:
+        loaders_dict[process] = preprocess(
+            dir=ds_dir,
+            name='med',
+            process=process,
+            train_size=0.65,
+            val_size=0.15,
+            infer_size=0.20,
+            seq_len=3,
+            norm_include=['heart_rate', 'blood_pressure', 'time'],
+            full_epoch=6,
+            per_epoch=False,
+            time_include=True,
+            shifted=False,
+            splitted=False,
+            weighted=False,
+            analyzed=False,
+            normalized=False,
+            weights_from='train',
+            stats_from='train'
+        )
 
 if __name__ == "__main__":
     main()
