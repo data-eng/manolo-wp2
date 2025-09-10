@@ -3,7 +3,7 @@ from attn_ae.infer import main as infer
 from attn_ae.utils import *
 
 from converter import create_npz, create_metadata
-from torch_loader import
+from torch_loader import preprocess
 import numpy as np
 
 def create_med_dataset():
@@ -29,25 +29,30 @@ def create_med_dataset():
     weights = labels.copy()
     other = np.random.rand(T, 1).astype(np.float32)
 
-    npz_path = get_path('..', 'testcases', 'data', filename="med.npz")
-    metadata_path = get_path('..', 'testcases', 'data', filename="med.json")
+    npz_path = get_path('..', 'testcases', 'data', filename='med.npz')
+    metadata_path = get_path('..', 'testcases', 'data', filename='med.json')
 
     create_npz((features, time, labels, split, weights, other), path=npz_path)
 
     create_metadata(path=metadata_path,
-                    keys=(["heart_rate", "blood_pressure", "time", "condition", "night", "gender"],
-                          ["HR", "blood_pressure"],
-                          ["time"],
-                          ["condition"],
-                          ["night"],
-                          ["condition"],
-                          ["gender"])
+                    keys=(['heart_rate', 'blood_pressure', 'time', 'condition', 'night', 'gender'],
+                          ['HR', 'blood_pressure'],
+                          ['time'],
+                          ['condition'],
+                          ['night'],
+                          ['condition'],
+                          ['gender'])
                     )
 
     return npz_path, metadata_path
 
 def main():
+    ds_dir = get_dir('..', 'testcases', 'data')
     npz_path, metadata_path = create_med_dataset()
+
+    # loaders = preprocess('dir': ds_dir,
+    #                      'name': 'med',
+    #                      ...)
 
 if __name__ == "__main__":
     main()
