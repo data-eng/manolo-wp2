@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "attn_ae"
-version = "0.62"
+version = "0.71"
 packages = [
     { include = "attn_ae" }
 ]
@@ -10,21 +10,13 @@ authors = [ "Natalia Koliou <nataliakoliou@iit.demokritos.gr>",
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.13"
-
+python = ">=3.9,<3.14"    
 numpy = "^1.26"
-torch = {version = "^2.7.0+cpu", source = "pytorch_cpu"}
-
+torch = "^2.7.0"
 fastapi = "^0.115.0"
 uvicorn = "^0.23.2"
 
-#my-package = {path = "../../../base/data/python_wrapper", develop = true}
-manolo_client = {path = "../../../base/data/python_wrapper"}
-
-[[tool.poetry.source]]
-name = "pytorch_cpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
+converter = { path = "../../other/converter", develop = true }
 
 [build-system]
 requires = ["poetry-core"]
@@ -32,3 +24,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 api = "attn_ae.api:setup"
+dummy = "testcases.dummy:main"
