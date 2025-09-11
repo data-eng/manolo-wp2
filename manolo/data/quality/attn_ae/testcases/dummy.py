@@ -25,7 +25,8 @@ def create_med_dataset():
     features = np.random.rand(T, 2).astype(np.float32)
     time = np.arange(1, T+1).reshape(-1, 1).astype(np.float32)
     labels = np.random.randint(0, 2, size=(T, 1)).astype(np.float32)
-    split = labels.copy()
+    
+    split = np.random.randint(0, 5, size=(T, 1)).astype(np.float32)
     weights = labels.copy()
     other = np.random.rand(T, 1).astype(np.float32)
 
