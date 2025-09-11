@@ -4,7 +4,9 @@ from attn_ae.utils import *
 
 from converter import create_npz, create_metadata
 from torch_loader import preprocess
+
 import numpy as np
+import requests
 
 logger = get_logger(level='INFO')
 
@@ -71,12 +73,12 @@ def prepare_params(ds_dir):
         weights_path = get_path(ds_dir, filename=f"med-weights.json")
         weights = load_json(weights_path)
 
-        data_id_params = {"data": loaders, "weights": weights}
-
         if process == 'prepare':
             save_url = get_path('..', 'testcases', 'models', filename=f'attn_ae.pth')
 
-            model_params = {
+            train_data_id_params = {"data": loaders, "weights": weights}
+
+            train_model_params = {
                 "model_params": {
                     "seq_len": 3,
                     "num_feats": 3,
@@ -89,7 +91,7 @@ def prepare_params(ds_dir):
                 "model_pth": save_url
             }
 
-            options_params = {
+            train_options_params = {
                 "process_params": {
                     "batch_size": 8,
                     "loss": "BlendedLoss",
@@ -112,18 +114,14 @@ def prepare_params(ds_dir):
                     "best_val_loss"
                 ]
             }
-
-            train_args = {
-                "data_id": data_id_params,
-                "model": model_params,
-                "options": options_params
-            }
         
         else:
             model_url = get_path('..', 'testcases', 'models', filename=f'attn_ae.zip')
-            model_params = model_url
 
-            options_params = {
+            infer_data_id_params = {"data": loaders, "weights": weights}
+            infer_model_params = model_url
+
+            infer_options_params = {
                 "process_params": {
                     "batch_size": 8,
                     "loss": "BlendedLoss"
@@ -135,22 +133,58 @@ def prepare_params(ds_dir):
                 ]
             }
 
-            infer_args = {
-                "data_id": data_id_params,
-                "model": model_params,
-                "options": options_params
-            }
+        train_data_id_params_path = get_path('..', 'testcases', 'models', filename=f"train_data_id.pkl")
+        train_model_params_path = get_path('..', 'testcases', 'models', filename=f"train_model.pkl")
+        train_options_params_path = get_path('..', 'testcases', 'models', filename=f"train_options.pkl")
 
-    return train_args, infer_args
+        save_pickle(train_data_id_params, train_data_id_params_path)
+        save_pickle(train_model_params, train_model_params_path)
+        save_pickle(train_options_params, train_options_params_path)
+
+        infer_data_id_params_path = get_path('..', 'testcases', 'models', filename=f"infer_data_id.pkl")
+        infer_model_params_path = get_path('..', 'testcases', 'models', filename=f"infer_model.pkl")
+        infer_options_params_path = get_path('..', 'testcases', 'models', filename=f"infer_options.pkl")
+
+        save_pickle(infer_data_id_params, infer_data_id_params_path)
+        save_pickle(infer_model_params, infer_model_params_path)
+        save_pickle(infer_options_params, infer_options_params_path)
+
+        train_param_files = {
+            "data_id": train_data_id_params_path,
+            "model": train_model_params_path,
+            "options": train_options_params_path
+        }
+    
+        infer_param_files = {
+            "data_id": infer_data_id_params_path,
+            "model": infer_model_params_path,
+            "options": infer_options_params_path
+        }
+
+        return train_param_files, infer_param_files
+
+def remote_call(package, method, param_files):
+    response = requests.get(
+        'http://127.0.0.1:48033/run',
+        params={
+            "package": package, 
+            "method": method, 
+            **param_files
+            }
+    )
+
+    api_response = response.json()
+    
+    return api_response["results"]
 
 def main():
     ds_dir = get_dir('..', 'testcases', 'data')
     create_med_dataset()
 
-    train_args, infer_args = prepare_params(ds_dir)
+    train_param_files, infer_param_files = prepare_params(ds_dir)
 
-    train(**train_args)
-    infer(**infer_args)
+    remote_call(package='attn_ae', method='train', **train_param_files)
+    remote_call(package='attn_ae', method='infer', **infer_param_files)
 
     logger.info("Training and inference complete!")
 
