@@ -1,20 +1,28 @@
 [tool.poetry]
 name = "attn_ae"
-version = "0.69"
+version = "0.86"
 packages = [
     { include = "attn_ae" }
 ]
 description = "Attention-based Autoencoder"
 authors = [ "Natalia Koliou <nataliakoliou@iit.demokritos.gr>",
-	        "Stasinos Konstantopoulos <konstant@iit.demokritos.gr>" ]
+            "Stasinos Konstantopoulos <konstant@iit.demokritos.gr>" ]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
-torch = "^2.7.0"
+python = ">=3.9,<3.14"    
+numpy = "^1.26"
+torch = {version = "^2.7.0+cpu", source = "pytorch_cpu"}
 fastapi = "^0.115.0"
 uvicorn = "^0.23.2"
-numpy = "^1.26"
+
+converter = { path = "../../other/converter", develop = true }
+torch_loader = { path = "../../other/loaders/torch_loader/", develop = true }
+
+[[tool.poetry.source]]
+name = "pytorch_cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]
@@ -22,3 +30,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 api = "attn_ae.api:setup"
+dummy = "testcases.dummy:main"
