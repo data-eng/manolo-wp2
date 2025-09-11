@@ -6,7 +6,7 @@ from . import utils
 
 logger = utils.get_logger(level='DEBUG')
 
-def get_stats(dir, name, process, done=False):
+def get_stats(dir, name, process, done=False, stats_from='train'):
     """
     Load structured .npz data and metadata, compute stats (mean, std, median, IQR) per column,
     and save the stats as a JSON file.
