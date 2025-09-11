@@ -46,7 +46,7 @@ def create_med_dataset():
                     )
 
 def prepare_params(ds_dir):
-    for process, analyzed in zip(['prepare', 'work'], [False, True]):
+    for process in ('prepare', 'work'):
         loaders = preprocess(
             dir=ds_dir,
             name='med',
@@ -62,7 +62,7 @@ def prepare_params(ds_dir):
             shifted=False,
             splitted=False,
             weighted=False,
-            analyzed=analyzed,
+            analyzed=False,
             normalized=False,
             weights_from='train',
             stats_from='train'
