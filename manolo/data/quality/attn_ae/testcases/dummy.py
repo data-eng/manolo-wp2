@@ -6,6 +6,8 @@ from converter import create_npz, create_metadata
 from torch_loader import preprocess
 import numpy as np
 
+logger = get_logger(level='INFO')
+
 def create_med_dataset():
     """
     Generate a small, synthetic medical dataset for testing purposes.
@@ -17,8 +19,6 @@ def create_med_dataset():
       - A split column (used to indicate subsets for training/testing).
       - A weights column (for sample weighting).
       - An additional 'other' feature not used in model input.
-
-    :return: Tuple of .npz data and .json metadata files.
     """
     T = 1000
 
@@ -44,12 +44,7 @@ def create_med_dataset():
                           ['gender'])
                     )
 
-    return npz_path, metadata_path
-
-def main():
-    ds_dir = get_dir('..', 'testcases', 'data')
-    npz_path, metadata_path = create_med_dataset()
-
+def prepare_params(ds_dir):
     for process, analyzed in zip(['prepare', 'work'], [False, True]):
         loaders = preprocess(
             dir=ds_dir,
@@ -76,8 +71,6 @@ def main():
         weights = load_json(weights_path)
 
         data_id_params = {"data": loaders, "weights": weights}
-        data_id_params_path = get_path('..', 'testcases', 'models', filename=f'data_id.pkl')
-        save_pickle(data_id_params, data_id_params_path)
 
         if process == 'prepare':
             save_url = get_path('..', 'testcases', 'models', filename=f'attn_ae.pth')
@@ -118,6 +111,12 @@ def main():
                     "best_val_loss"
                 ]
             }
+
+            train_args = {
+                "data_id": data_id_params,
+                "model": model_params,
+                "options": options_params
+            }
         
         else:
             model_url = get_path('..', 'testcases', 'models', filename=f'attn_ae.zip')
@@ -135,12 +134,24 @@ def main():
                 ]
             }
 
-        model_params_path = get_path('..', 'testcases', 'models', filename='model.pkl')
-        save_pickle(model_params, model_params_path)
+            infer_args = {
+                "data_id": data_id_params,
+                "model": model_params,
+                "options": options_params
+            }
 
-        options_path = get_path('..', 'testcases', 'models', filename='options.pkl')
-        save_pickle(options_params, options_path)
+    return train_args, infer_args
 
+def main():
+    ds_dir = get_dir('..', 'testcases', 'data')
+    create_med_dataset()
+
+    train_args, infer_args = prepare_params(ds_dir)
+
+    train(**train_args)
+    infer(**infer_args)
+
+    logger.info("Training and inference complete!")
 
 if __name__ == "__main__":
     main()
