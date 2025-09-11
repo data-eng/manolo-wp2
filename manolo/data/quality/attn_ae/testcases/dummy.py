@@ -20,7 +20,7 @@ def create_med_dataset():
 
     :return: Tuple of .npz data and .json metadata files.
     """
-    T = 10
+    T = 1000
 
     features = np.random.rand(T, 2).astype(np.float32)
     time = np.arange(1, T+1).reshape(-1, 1).astype(np.float32)
@@ -50,10 +50,8 @@ def main():
     ds_dir = get_dir('..', 'testcases', 'data')
     npz_path, metadata_path = create_med_dataset()
 
-    loaders_dict = {}
-
-    for process in ['prepare', 'work']:
-        loaders_dict[process] = preprocess(
+    for process, analyzed in zip(['prepare', 'work'], [False, True]):
+        loaders = preprocess(
             dir=ds_dir,
             name='med',
             process=process,
@@ -68,11 +66,81 @@ def main():
             shifted=False,
             splitted=False,
             weighted=False,
-            analyzed=False,
+            analyzed=analyzed,
             normalized=False,
             weights_from='train',
             stats_from='train'
         )
+
+        weights_path = get_path(ds_dir, filename=f"med-weights.json")
+        weights = load_json(weights_path)
+
+        data_id_params = {"data": loaders, "weights": weights}
+        data_id_params_path = get_path('..', 'testcases', 'models', filename=f'data_id.pkl')
+        save_pickle(data_id_params, data_id_params_path)
+
+        if process == 'prepare':
+            save_url = get_path('..', 'testcases', 'models', filename=f'attn_ae.pth')
+
+            model_params = {
+                "model_params": {
+                    "seq_len": 3,
+                    "num_feats": 3,
+                    "latent_seq_len": 1,
+                    "latent_num_feats": 6,
+                    "num_heads": 1,
+                    "num_layers": 1,
+                    "dropout": 0.05
+                },
+                "model_pth": save_url
+            }
+
+            options_params = {
+                "process_params": {
+                    "batch_size": 8,
+                    "loss": "BlendedLoss",
+                    "epochs": 3,
+                    "patience": 30,
+                    "lr": 0.0001,
+                    "optimizer": "Adam",
+                    "scheduler": {
+                        "name": "ReduceLROnPlateau",
+                        "params": {
+                            "factor": 0.99,
+                            "patience": 3
+                        }
+                    }
+                },
+                "metrics": [
+                    "epochs",
+                    "train_time",
+                    "best_train_loss",
+                    "best_val_loss"
+                ]
+            }
+        
+        else:
+            model_url = get_path('..', 'testcases', 'models', filename=f'attn_ae.zip')
+            model_params = model_url
+
+            options_params = {
+                "process_params": {
+                    "batch_size": 8,
+                    "loss": "BlendedLoss"
+                },
+                "metrics": [
+                    "infer_loss",
+                    "mae",
+                    "mse"
+                ]
+            }
+
+        model_params_path = get_path('..', 'testcases', 'models', filename='model.pkl')
+        save_pickle(model_params, model_params_path)
+
+        options_path = get_path('..', 'testcases', 'models', filename='options.pkl')
+        save_pickle(options_params, options_path)
+
 
 if __name__ == "__main__":
     main()
