@@ -133,35 +133,35 @@ def prepare_params(ds_dir):
                 ]
             }
 
-        train_data_id_params_path = get_path('..', 'testcases', 'models', filename=f"train_data_id.pkl")
-        train_model_params_path = get_path('..', 'testcases', 'models', filename=f"train_model.pkl")
-        train_options_params_path = get_path('..', 'testcases', 'models', filename=f"train_options.pkl")
+    train_data_id_params_path = get_path('..', 'testcases', 'models', filename=f"train_data_id.pkl")
+    train_model_params_path = get_path('..', 'testcases', 'models', filename=f"train_model.pkl")
+    train_options_params_path = get_path('..', 'testcases', 'models', filename=f"train_options.pkl")
 
-        save_pickle(train_data_id_params, train_data_id_params_path)
-        save_pickle(train_model_params, train_model_params_path)
-        save_pickle(train_options_params, train_options_params_path)
+    save_pickle(train_data_id_params, train_data_id_params_path)
+    save_pickle(train_model_params, train_model_params_path)
+    save_pickle(train_options_params, train_options_params_path)
 
-        infer_data_id_params_path = get_path('..', 'testcases', 'models', filename=f"infer_data_id.pkl")
-        infer_model_params_path = get_path('..', 'testcases', 'models', filename=f"infer_model.pkl")
-        infer_options_params_path = get_path('..', 'testcases', 'models', filename=f"infer_options.pkl")
+    infer_data_id_params_path = get_path('..', 'testcases', 'models', filename=f"infer_data_id.pkl")
+    infer_model_params_path = get_path('..', 'testcases', 'models', filename=f"infer_model.pkl")
+    infer_options_params_path = get_path('..', 'testcases', 'models', filename=f"infer_options.pkl")
 
-        save_pickle(infer_data_id_params, infer_data_id_params_path)
-        save_pickle(infer_model_params, infer_model_params_path)
-        save_pickle(infer_options_params, infer_options_params_path)
+    save_pickle(infer_data_id_params, infer_data_id_params_path)
+    save_pickle(infer_model_params, infer_model_params_path)
+    save_pickle(infer_options_params, infer_options_params_path)
 
-        train_param_files = {
-            "data_id": train_data_id_params_path,
-            "model": train_model_params_path,
-            "options": train_options_params_path
-        }
-    
-        infer_param_files = {
-            "data_id": infer_data_id_params_path,
-            "model": infer_model_params_path,
-            "options": infer_options_params_path
-        }
+    train_param_files = {
+        "data_id": train_data_id_params_path,
+        "model": train_model_params_path,
+        "options": train_options_params_path
+    }
 
-        return train_param_files, infer_param_files
+    infer_param_files = {
+        "data_id": infer_data_id_params_path,
+        "model": infer_model_params_path,
+        "options": infer_options_params_path
+    }
+
+    return train_param_files, infer_param_files
 
 def remote_call(package, method, param_files):
     response = requests.get(
@@ -183,8 +183,8 @@ def main():
 
     train_param_files, infer_param_files = prepare_params(ds_dir)
 
-    remote_call(package='attn_ae', method='train', **train_param_files)
-    remote_call(package='attn_ae', method='infer', **infer_param_files)
+    remote_call(package='attn_ae', method='train', param_files=train_param_files)
+    remote_call(package='attn_ae', method='infer', param_files=infer_param_files)
 
     logger.info("Training and inference complete!")
 
