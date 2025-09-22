@@ -8,7 +8,7 @@ def create_metadata(path, keys):
     :param path: Path to save the metadata JSON.
     :param keys: Tuple containing the categories of the metadata.
     """
-    columns, features, time, labels, split, weights, other = keys
+    columns, features, time, labels, split, weights, sort, other = keys
 
     metadata = {
         "columns": columns,
@@ -17,6 +17,7 @@ def create_metadata(path, keys):
         "labels": labels,
         "split": split,
         "weights": weights,
+        "sort": sort,
         "other": other
     }
 
@@ -27,10 +28,10 @@ def create_npz(data, path):
     """
     Save multiple structured numpy arrays into a single .npz file.
 
-    :param data: Tuple of arrays (features, time, labels, split, weights, other).
+    :param data: Tuple of arrays (features, time, labels, split, weights, sort, other).
     :param path: Path where the .npz archive will be saved.
     """
-    keys = ['features', 'time', 'labels', 'split', 'weights', 'other']
+    keys = ['features', 'time', 'labels', 'split', 'weights', 'sort', 'other']
     array_dict = {k: v for k, v in zip(keys, data)}
 
     np.savez(path, **array_dict)

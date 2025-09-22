@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "converter"
-version = "0.2"
+version = "0.3"
 description = "Dataset converter to MANOLO format: .npy for data, .json for metadata."
 authors = [ "Natalia Koliou <nataliakoliou@iit.demokritos.gr>",
 	        "Stasinos Konstantopoulos <konstant@iit.demokritos.gr>" ]
