@@ -1,19 +1,19 @@
-from __future__ import absolute_import, print_function, division
 import os
-import sys
 import time
-import numpy as np
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.backends.cudnn as cudnn
-
-from manolo.base.data.dataset_utils import get_features_dataset
-
-from manolo.base.utils.feat_utils import parser_function, AverageMeter, accuracy, kNN_features
+from manolo.base.wrappers.numpy import np
+from manolo.base.wrappers.pytorch import cudnn, torch
+from manolo.base.wrappers.pytorch import nn_functional as F
+from manolo.base.wrappers.pytorch import torch_nn as nn
 
 
+from manolo.base.metrics.Accuracy import accuracy
+from manolo.base.data.data_loader import load_dataset
+from manolo.base.utils.evaluation_utils import AverageMeter, kNN_features
+from manolo.data.synth.feature_extraction_utils import parser_function
+from manolo.base.metrics.code_carbon_utils import codecarbon_manolo
+from manolo.base.utils.logger_utils import log_metrics
+
+@codecarbon_manolo
 def eval_features(args=None):
     """
     Run evaluation of features using both linear and non-linear classifiers.
@@ -28,14 +28,14 @@ def eval_features(args=None):
         args, unparsed = parser_function()
     
     # Set the save directory
-    args.save_root = os.path.join(args.save_root, args.note)
+    args.save_root = os.path.join(args.save_root, args.exp_name)
     
     # Set random seeds for reproducibility
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     
     # Device configuration
-    if args.cuda:
+    if args.select_cuda != -1:
         torch.cuda.manual_seed(args.seed)
         cudnn.enabled = True
         cudnn.benchmark = True
@@ -44,19 +44,10 @@ def eval_features(args=None):
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
-    
-    print("args = %s" % args)
-    print("====== ====== ====== ====== ====== ====== ")    
-    print("Using device:", device)
-    if device.type == 'cuda':
-        print(torch.cuda.get_device_name(0))
-        print('Memory Usage:')
-        print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024**3, 1), 'GB')
-        print('Cached:   ', round(torch.cuda.memory_reserved(0) / 1024**3, 1), 'GB')    
-    print("====== ====== ====== ====== ====== ====== ")        
 
     # Get training and testing datasets (assumed to be based on precomputed features)
-    train_loader, test_loader = get_features_dataset(args)
+    args.data_name = "extracted_features"
+    train_loader, test_loader = load_dataset(args)
     
     # Define classifier architectures
     class ClfBase(nn.Module):
@@ -135,8 +126,7 @@ def eval_features(args=None):
         f.write("Acc linear evaluation (best in ep {}): \t\t{}\n".format(best_ep_lin, best_acc_lin))
         f.write("Acc non linear evaluation (best in ep {}): \t{}\n".format(best_ep_non_lin, best_acc_non_lin))
         f.write("Acc KNN evaluation: \t\t\t\t\t\t{}\n".format(acc_knn))
-    
-    # Return the results as a dictionary
+
     results = {
         'best_acc_lin': best_acc_lin,
         'best_ep_lin': best_ep_lin,
@@ -144,6 +134,8 @@ def eval_features(args=None):
         'best_ep_non_lin': best_ep_non_lin,
         'acc_knn': acc_knn
     }
+    if args.store_metrics_in_mlflow:
+        log_metrics(results)
     return results
 
 
@@ -220,4 +212,3 @@ def test(test_loader, net, criterion, device):
 
     print('Evaluation metrics ==> Loss: {:.4f}, Prec@1: {:.2f}, Prec@5: {:.2f}'.format(losses.avg, top1.avg, top5.avg))
     return top1.avg, top5.avg
-

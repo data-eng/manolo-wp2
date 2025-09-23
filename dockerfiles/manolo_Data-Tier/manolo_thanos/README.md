@@ -1,0 +1,1 @@
+MANOLO Thanos (docker image)
