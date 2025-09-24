@@ -4,12 +4,15 @@ services:
     container_name: manolo_db
     environment:
       POSTGRES_USER: manolo
-      POSTGRES_PASSWORD: manolo
       POSTGRES_DB: manolo_db
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     ports:
       - "8432:5432"
     volumes:
       - ./storage:/opt/storage
+      - ./init-db:/docker-entrypoint-initdb.d 
+    secrets:
+      - db_password
     profiles:
       - dev
       - db
@@ -31,7 +34,7 @@ services:
       DB_PORT: 5432
       DB_NAME: manolo_db
       DB_USERNAME: manolo
-      DB_PASSWORD: manolo
+      DB_PASSWORD_FILE: /run/secrets/db_password
       MLFLOW_URL: http://manolo_mlflow:5000 # Replace with your mlflow url
     #    CERTIFICATE_PATH: "/root/cert.pem" # Certificate path make sure to mount the certificate
     #    CERTIFICATE_PASSWORD: "manolo"
@@ -40,31 +43,35 @@ services:
     ports:
       - "5002:5002" # HTTPS
       - "5001:5001" # HTTP
+    secrets:
+      - db_password
     profiles:
       - dev
     networks:
       - manolo_net
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
+    restart: always
+    build: ./mlflow
     container_name: manolo_mlflow
     depends_on:
       db:
         condition: service_started
-    environment:
-      BACKEND_STORE_URI: postgresql://manolo:manolo@db:5432/mlflow_db
-      ARTIFACT_ROOT: postgresql://manolo:manolo@db:5432/mlflow_artifacts
     command: >
-      mlflow server 
-      --backend-store-uri ${BACKEND_STORE_URI} 
-      --default-artifact-root ${ARTIFACT_ROOT} 
-      --host 0.0.0.0 
+      mlflow server
+      --backend-store-uri postgresql://manolo:manolo@db:5432/mlflow_db
+      --default-artifact-root /mlflow/artifacts
+      --host 0.0.0.0
       --port 5000
     ports:
       - "5000:5000"
     networks:
       - manolo_net
-    
+
+secrets:
+  db_password:
+    file: ./secrets.txt # Change this to your own password file
+      
 networks:
   manolo_net:
     driver: bridge
