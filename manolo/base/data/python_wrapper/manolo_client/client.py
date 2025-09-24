@@ -38,7 +38,7 @@ class ManoloClient(
     GenericHelpers
 ):
     def __init__(self, base_url: str, username: str, password: str,
-                 key: bytes, logging_level: logging = logging.INFO,
+                 key: bytes = None, logging_level: logging = logging.INFO,
                  log_dir: str = "logs", log_to_file: bool = True,
                  log_to_console: bool = False, performance_monitor: bool = False, log_args: bool = False,
                  signalr_url: str = "/signalr", max_workers: int = 10):
@@ -61,7 +61,7 @@ class ManoloClient(
         self.base_url = base_url.rstrip("/")
         self.username = username
         self.password = password
-        self.key = key
+        self.key = key if key else None
         self._pending_items = asyncio.Queue()
         self.performance_monitor = performance_monitor
 

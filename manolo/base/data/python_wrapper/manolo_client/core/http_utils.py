@@ -15,11 +15,12 @@ class HttpUtilsMixin:
 
         self.session.on_quic_ticket = self._save_ticket
 
-        if len(self.key) not in (16, 24, 32):
-            self.logger.error(
-                "Invalid AES key size. Must be 16, 24, or 32 bytes.")
-            raise ValueError(
-                "Invalid AES key size. Must be 16, 24, or 32 bytes.")
+        if self.key:
+            if len(self.key) not in (16, 24, 32):
+                self.logger.error(
+                    "Invalid AES key size. Must be 16, 24, or 32 bytes.")
+                raise ValueError(
+                    "Invalid AES key size. Must be 16, 24, or 32 bytes.")
 
     def _save_ticket(self, ticket: bytes):
         """Store QUIC session ticket for 0-RTT resumption."""

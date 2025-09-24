@@ -73,14 +73,21 @@ class ItemMixin:
         response = self.session.get(
             self._url("downloadItemData"), params=params)
 
-        content_type = response.headers.get("Content-Type", "")
-        if "application/octet-stream" not in content_type:
-            raise Exception(
-                f"Unexpected content type: {content_type}, response: {response.text[:200]}")
+        if response.status_code == 404:
+            self.logger.error(f"Item with id={id} not found in DSN {dsn}")
+            return
 
-        with open(output_path, 'wb') as f:
+        os.makedirs(output_path, exist_ok=True)
+
+        item_info = self.get_item(dsn, id)
+        filename = f"{item_info.Id}.{item_info.MimeType}"
+        filepath = os.path.join(output_path, filename)
+
+        with open(filepath, "wb") as f:
             f.write(response.content)
-        return output_path
+
+        self.logger.info(f"Downloaded item {id} to {filepath}")
+        return filepath
 
     def get_item(self: "ManoloClient", dsn: int, id: str):
         """
@@ -166,28 +173,83 @@ class ItemMixin:
         response = self.session.put(self._url("updateItem"), params=params)
         return self._check_response(response)
 
-    def create_item_batch_files(self: "ManoloClient", dsn: int, item_paths: list[str]):
+    def create_item_batch_files(self: "ManoloClient", manifest, dsn: int, item_paths: list[str]):
         """
-        Upload multiple items from files using multipart/form-data batch.
+        Upload multiple items from files using multipart/form-data.
+        Skips files that are already present in the manifest based on SHA256.
+        Saves uploaded items into the manifest with file_path and file_sha256.
+        """
 
-        Args:
-            dsn (int): Data structure number.
-            item_paths (list[str]): List of local file paths to upload.
-        """
         self.logger.debug(f"Uploading batch items from files to DSN {dsn}")
 
-        files = {}
-        for i, path in enumerate(item_paths):
-            mime_type, _ = mimetypes.guess_type(path)
-            if mime_type is None:
-                mime_type = "application/octet-stream"
-            with open(path, 'rb') as f:
-                files[f'DataFile[{i}]'] = (
-                    os.path.basename(path), f.read(), mime_type)
+        if isinstance(item_paths, str):
+            if os.path.isdir(item_paths):
+                item_paths = [
+                    os.path.join(item_paths, f)
+                    for f in os.listdir(item_paths)
+                    if os.path.isfile(os.path.join(item_paths, f))
+                ]
+            else:
+                item_paths = [item_paths]
 
-        data = {'Dsn': str(dsn)}
+        existing_hashes = {
+            item.file_sha256 for item in manifest.items if hasattr(item, "file_sha256")}
+
+        files = []
+        file_hashes = []
+        rel_paths = []
+
+        for path in item_paths:
+            with open(path, "rb") as f:
+                raw = f.read()
+            sha256 = hashlib.sha256(raw).hexdigest()
+
+            if sha256 in existing_hashes:
+                self.logger.debug(
+                    f"Skipping already uploaded file (hash match): {os.path.basename(path)}")
+                continue  # skip this file
+
+            rel_paths.append(os.path.basename(path))
+            file_hashes.append(sha256)
+            files.append(
+                ("dataFiles", (os.path.basename(path), open(path, "rb"))))
+
+        if not files:
+            self.logger.info("No new files to upload.")
+            return None
+
+        data = {
+            "Dsn": str(dsn)
+        }
+
         response = self.session.post(
-            self._url("createItemBatch"), files=files, json=data)
+            self._url("createItemBatch"),
+            data=data,
+            files=files
+        )
+
+        for _, (_, f) in files:
+            f.close()
+
+        try:
+            object_ids = response.json()
+        except Exception:
+            object_ids = response.text
+
+        if isinstance(object_ids, str):
+            object_ids = [object_ids]
+        elif isinstance(object_ids, list) and all(isinstance(i, list) for i in object_ids):
+            object_ids = [item for sublist in object_ids for item in sublist]
+
+        for obj_id, rel_path, sha in zip(object_ids, rel_paths, file_hashes):
+            item_ns = SimpleNamespace(
+                object_id=obj_id,
+                file_path=rel_path,
+                file_sha256=sha
+            )
+            manifest.items.append(item_ns)
+
+        self.logger.info(f"Uploaded {len(object_ids)} new files successfully.")
         return self._check_response(response)
 
     def create_item_batch_raw(self: "ManoloClient", dsn: int, data_list: list[str], batch_size: int = 100, max_workers: int = None):
@@ -212,7 +274,7 @@ class ItemMixin:
             try:
                 json_payload = {"Dsn": dsn, "Data": batch}
                 response = self.session.post(
-                    self._url("createItemBatch"), json=json_payload)
+                    url=self._url("createItemBatch"), data=json_payload)
                 return self._check_response(response)
             except Exception as e:
                 self.logger.error(f"Batch starting at {start_idx} failed: {e}")
