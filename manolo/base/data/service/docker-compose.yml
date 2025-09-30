@@ -52,7 +52,7 @@ services:
 
   mlflow:
     restart: always
-    build: ./mlflow
+    build: ../mlflow
     container_name: manolo_mlflow
     depends_on:
       db:
