@@ -4,13 +4,11 @@ import sys
 import os
 sys.path.append(os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../..")))
+
 from manolo_client.client import ManoloClient
 
 
-
-
 IMAGE_ROOT = "manolo/base/data/python_wrapper/manolo_client/demo/images"
-DSN = 10001  #
 key_b64 = "kVnA8+8nFbGHWJ9fAptF6Bp22E5h8lfUPJ1/jjvgL0c="
 
 MANIFEST_PATH = "manolo/base/data/python_wrapper/manolo_client/demo/manifest.json"
@@ -35,10 +33,12 @@ if __name__ == "__main__":
 
     manifest = client.load_manifest(manifest_path=MANIFEST_PATH)
 
+    DSN = client.get_next_datastructure_number()
+
     dataset = client.get_datastructure(dsn=DSN)
 
     if dataset is None or isinstance(dataset, str):
-        client.create_datastructure(DSN, "TestPhotos", "image")
+        client.create_datastructure(DSN, "TestPhotos" + str(DSN), "image")
 
     client.upload_items_with_encryption(
         manifest=manifest,

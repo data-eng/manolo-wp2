@@ -7,7 +7,12 @@ if TYPE_CHECKING:
 
 class DataStructureMixin:
 
-    def create_datastructure(self: "ManoloClient", dsn: int, name: str, kind: str):
+    def get_next_datastructure_number(self):
+        response = self.session.get(
+            url=self._url("getNextDataStructureNumber"))
+        return self._check_response(response)
+
+    def create_datastructure(self: "ManoloClient", dsn: int, name: str, kind: str, description: str = None):
         """
         Create a new data structure. `dsn` can vary depending on the type of structure being created.
 
@@ -15,10 +20,16 @@ class DataStructureMixin:
             dsn (int): Data structure number or identifier.
             name (str): Name of the data structure.
             kind (str): Type of the data structure.
+            description (str, optional): Description of the data structure.
         """
+
         self.logger.debug(
             f"Creating data structure {name} with kind {kind} and dsn {dsn}")
         params = {"Dsn": dsn, "Name": name, "Kind": kind}
+
+        if description is not None:
+            params["Description"] = description
+
         response = self.session.post(
             self._url("createDataStructure"), params=params)
         return self._check_response(response)

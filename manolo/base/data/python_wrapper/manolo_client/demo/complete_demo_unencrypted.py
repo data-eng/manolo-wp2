@@ -4,10 +4,10 @@ import os
 
 sys.path.append(os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../..")))
+
 from manolo_client.client import ManoloClient
 
 IMAGE_ROOT = "manolo/base/data/python_wrapper/manolo_client/demo/images"
-DSN = 10001  #
 
 DOWNLOAD_DIR = "manolo/base/data/python_wrapper/manolo_client/demo/output"
 
@@ -27,12 +27,15 @@ if __name__ == "__main__":
 
     client.login()
 
+    DSN = client.get_next_datastructure_number()
+
     manifest = client.load_manifest()
 
     dataset = client.get_datastructure(dsn=DSN)
 
     if dataset is None or isinstance(dataset, str):
-        client.create_datastructure(DSN, "TestPhotos", "image")
+        client.create_datastructure(
+            DSN, "TestPhotos"+str(DSN), "image", "Test photos")
 
     client.create_item_batch_files(
         manifest=manifest,
