@@ -9,7 +9,6 @@ services:
     ports:
       - "8432:5432"
     volumes:
-      - ./storage:/opt/storage
       - ./init-db:/docker-entrypoint-initdb.d 
     secrets:
       - db_password
