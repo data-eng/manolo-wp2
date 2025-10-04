@@ -8,19 +8,22 @@ using Npgsql;
 
 namespace ManoloDataTier.Api.Features.Item.GetItem;
 
-public class GetItemHandler : IRequestHandler<GetItemQuery, Result>{
+public class GetItemHandler : IRequestHandler<GetItemQuery, Result>
+{
 
-    private readonly ManoloDbContext    _context;
+    private readonly ManoloDbContext _context;
+
     private readonly IIdResolverService _idResolverService;
 
 
-    public GetItemHandler(ManoloDbContext context, IIdResolverService idResolverService){
+    public GetItemHandler(ManoloDbContext context, IIdResolverService idResolverService)
+    {
         _context           = context;
         _idResolverService = idResolverService;
     }
 
-    public async Task<Result> Handle(GetItemQuery request, CancellationToken cancellationToken){
-
+    public async Task<Result> Handle(GetItemQuery request, CancellationToken cancellationToken)
+    {
         var existingDataStructure = await _context.DataStructures
                                                   .AsNoTracking()
                                                   .AnyAsync(d => d.Dsn == request.Dsn, cancellationToken);
@@ -33,7 +36,7 @@ public class GetItemHandler : IRequestHandler<GetItemQuery, Result>{
         var tableName = $"ItemDSN{request.Dsn}";
 
         var sql = $"""
-            SELECT "Id", "ForeignDsn","MimeType", "IsForeignRaw", "LastChangeDateTime", "IsDeletedRaw", "IsFileRaw"
+            SELECT "Id", "ForeignDsn","DataOid", "MimeType", "IsForeignRaw", "LastChangeDateTime", "IsDeletedRaw", "IsFileRaw"
             FROM "{tableName}" 
             WHERE "Id" = @Id
             """;

@@ -24,6 +24,9 @@ public class DataStructure : IEntity{
 
     [MaxLength(150)]
     public required string Kind{ get; set; }
+    
+    [MaxLength(250)]
+    public string? Description{ get; set; }
 
     public required long LastChangeDateTime{ get; set; }
 

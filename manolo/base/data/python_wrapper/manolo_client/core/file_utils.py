@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class FileUtilsMixin:
-    def load_manifest(self: "ManoloClient", manifest_path: str) -> SimpleNamespace:
+    def load_manifest(self: "ManoloClient", manifest_path: str = "manifest.json") -> SimpleNamespace:
         """
         Loads a manifest from a file.
 
@@ -25,6 +25,9 @@ class FileUtilsMixin:
         Returns:
             SimpleNamespace: Loaded manifest as an object with attribute access.
         """
+        if not manifest_path:
+            manifest_path = "manifest.json"
+
         self.logger.debug(f"Loading manifest from {manifest_path}...")
         if os.path.exists(manifest_path):
             try:

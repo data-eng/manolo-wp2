@@ -49,3 +49,4 @@ EXPOSE 5001
 EXPOSE 5002
 
 ENTRYPOINT ["dotnet", "ManoloDataTier.Api.dll"]
+

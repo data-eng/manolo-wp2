@@ -8,10 +8,10 @@ namespace ManoloDataTier.Api.Features.Item.CreateItem;
 public class CreateItemEndpoint : MainController{
 
     [ApiExplorerSettings(GroupName = "Item")]
-    [HttpPost("/createItem")] //TODO remove since we have batch
+    [HttpPost("/createItem")] 
     [RequestSizeLimit(1073741824)]
     //1GB
-    public async Task<string> AsyncMethod([FromBody] CreateItemQuery query){
+    public async Task<string> AsyncMethod([FromForm] CreateItemQuery query){
         var result = await Mediator.Send(query);
 
         return result;

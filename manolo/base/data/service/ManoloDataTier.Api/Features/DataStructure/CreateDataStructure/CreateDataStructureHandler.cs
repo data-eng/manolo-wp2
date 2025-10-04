@@ -43,6 +43,7 @@ public class CreateDataStructureHandler : IRequestHandler<CreateDataStructureQue
             Dsn                = request.Dsn == 0 ? await GetNextDsn() : request.Dsn,
             Kind               = request.Kind,
             LastChangeDateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            Description        = request.Description,
             IsDeletedRaw       = 0,
         };
 
