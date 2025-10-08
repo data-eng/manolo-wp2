@@ -123,6 +123,11 @@ class ItemMixin:
         Args:
             dsn (int): Data structure number.
         """
+        dataset = self.get_datastructure(dsn=dsn)
+        if dataset is None or isinstance(dataset, str):
+            self.logger.debug(f"No dataset found for DSN {dsn}")
+            return []
+
         self.logger.debug(f"Getting items for DSN {dsn}")
         response = self.session.get(self._url("getItems"), params={"Dsn": dsn})
         return json.loads(response.text.strip())
