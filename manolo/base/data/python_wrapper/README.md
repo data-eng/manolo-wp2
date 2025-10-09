@@ -75,3 +75,13 @@ The DSN is similar to anyone that is connected to the same instance of the Data 
 ### Manifest file
 
 The **manifest.json** is created by the service and is exclusively used when uploading encrypted items.
+
+### Regarding the unique keys:
+
+    The long 29-character value is the internal database ID (not user-friendly).
+
+    The DSN is a number that should carry meaning for the user who created the data structure, so it must be unique.
+    
+    The Name is intended as a more human-readable identifier, easier to recall than the DSN.
+
+This way, users have flexibility: a unique DSN and Name for structure identification, plus a free-form Description for convenience.
